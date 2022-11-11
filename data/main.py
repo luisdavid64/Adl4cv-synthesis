@@ -5,4 +5,4 @@ import os
 root = os.environ.get("FUTURE_DATASET")
 dataset = ThreedFutureDataset(root=root)
 
-angel_voxel = dataset[10].show()
+dataset[10].show()
