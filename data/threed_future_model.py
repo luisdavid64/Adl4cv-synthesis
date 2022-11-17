@@ -153,7 +153,7 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         self.voxel_object = None
 
     # Voxelize with trimesh
-    def voxelize(self, pitch=0.01):
+    def voxelize(self, pitch=0.1):
         mesh = self.raw_model(skip_texture=False, skip_materials=False)
         mesh.fill_holes()
         voxel = mesh.voxelized(pitch=pitch).hollow()
@@ -173,7 +173,6 @@ class VoxelThreedFutureModel(ThreedFutureModel):
 
         # We initialize a array of zeros of size X,Y,Z,4 to contain the colors for each voxel of the voxelized mesh in the grid
         cube_color=np.zeros([voxel.shape[0],voxel.shape[1],voxel.shape[2],4])
-
         # We loop through all the calculated closest voxel points
         for _, vert in enumerate(vert_idx):
             # Get the voxel grid index of each closets voxel center point
@@ -183,8 +182,9 @@ class VoxelThreedFutureModel(ThreedFutureModel):
             # Set the alpha channel of the color
             curr_color[3] = 255
             # add the color to the specific voxel grid index 
-            cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = curr_color
-        # generate a voxelized mesh from the voxel grid representation, using the calculated colors 
+            cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = curr_color / 255
+            # add the color to the specific voxel grid index 
+        self.voxel_color_map = cube_color
         return voxel
 
     def get_voxel_obj_arr(self):
@@ -192,8 +192,11 @@ class VoxelThreedFutureModel(ThreedFutureModel):
             self.voxelize()
         return self.voxel_object.matrix
     
-    def show_voxel_plot(self):
+    def show_voxel_plot(self, use_texture=False):
         arr = self.get_voxel_obj_arr()
         ax = plt.figure().add_subplot(projection='3d')
-        ax.voxels(arr)
+        if use_texture:
+            ax.voxels(arr, facecolors=self.voxel_color_map)
+        else:
+            ax.voxels(arr)
         plt.show()
