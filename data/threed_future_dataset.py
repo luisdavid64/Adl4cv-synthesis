@@ -6,7 +6,9 @@ import pickle
 import torch
 
 from base_dataset import Dataset
-from threed_future_model import ThreedFutureModel
+from threed_future_model import VoxelThreedFutureModel
+from threed_future_labels import THREED_FUTURE_LABELS
+from utils import lower_slash_format
 
 class ThreedFutureDataset(Dataset):
     def __init__(self, *args,
@@ -27,17 +29,23 @@ class ThreedFutureDataset(Dataset):
         #Transformations on data
         self.transform = transform
         self.objects = []
+        self.object_type_frequency = {}
+        future_labels = THREED_FUTURE_LABELS.values()
+        for v in future_labels:
+            self.object_type_frequency[v] = 0
         for model in self.model_info:
+            if model["category"] and lower_slash_format(model["category"]) in future_labels:
+                self.object_type_frequency[THREED_FUTURE_LABELS[lower_slash_format(model["category"])]] +=1
             self.objects.append(
-                ThreedFutureModel(
+                VoxelThreedFutureModel(
                     model_jid = model["model_id"],
                     model_info= model,
                     scale=1,
                     path_to_models=self.root_path
                 )
             )
-
-
+        self.object_types = THREED_FUTURE_LABELS
+        self.n_object_types = len(THREED_FUTURE_LABELS)
 
     def __len__(self):
         return len(self.model_info)
@@ -50,3 +58,15 @@ class ThreedFutureDataset(Dataset):
     
     def _filter_objects_by_label(self, label):
         return [oi for oi in self.objects if oi.label == label]
+
+
+    @property
+    def categories(self):
+        return set([s.lower().replace(" / ", "/") for s in self._categories])
+
+    @property
+    def super_categories(self):
+        return set([
+            s.lower().replace(" / ", "/")
+            for s in self._super_categories
+        ])
