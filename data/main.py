@@ -7,4 +7,4 @@ root = os.environ.get("FUTURE_DATASET")
 if not root:
     root = "/Users/luisreyes/Downloads/3D-FUTURE-model"
 dataset = ThreedFutureDataset(root=root)
-dataset[2].voxelize()
+dataset[8].show_voxel_plot()

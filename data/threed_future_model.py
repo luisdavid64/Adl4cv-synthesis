@@ -5,9 +5,8 @@ from simple_3dviz import Mesh
 from simple_3dviz.renderables.textured_mesh import TexturedMesh
 from simple_3dviz.behaviours.misc import LightToCamera
 from threed_future_labels import THREED_FUTURE_LABELS
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import trimesh
-import pyvista as pv
 
 try:
     from simple_3dviz.window import show
@@ -151,55 +150,50 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         path_to_models
     ):
         super().__init__(model_jid, model_info, scale, path_to_models)
+        self.voxel_object = None
 
-    def voxelize_pv(self):
-        mesh = pv.read(self.raw_model_path)
-        tex = pv.read_texture(self.texture_image_path)
-        # Initialize the plotter object with four sub plots
-        pl = pv.Plotter(shape=(1, 1))
-        # Second subplot show the voxelized repsentation of the mesh with voxel size of 0.01. We remove the surface check as the mesh has small imperfections
-        pl.subplot(0, 0)
-        voxels = pv.voxelize(mesh, density=0.01, check_surface=False)
-        # We add the voxels as a new mesh, add color and show their edges
-        pl.add_mesh(voxels, color=True, show_edges=False)
-        pl.show()
-
-
-    # Alternatively, show with trimesh
-    def voxelize(self):
+    # Voxelize with trimesh
+    def voxelize(self, pitch=0.01):
         mesh = self.raw_model(skip_texture=False, skip_materials=False)
-        print(mesh)
-        print(mesh.broken_faces())
-        # mesh.fill_holes()
-        # mesh.fix_normals()
-        # # Voxelize the loaded mesh with a voxel size of 0.01. We also call hollow() to remove the inside voxels, which will help with color calculation
-        # voxel = mesh.voxelized(0.05)
+        mesh.fill_holes()
+        voxel = mesh.voxelized(pitch=pitch).hollow()
+        self.voxel_object = voxel
 
-        # # Transform the texture information to color information, mapping it to each vertex. Transform it to a numpy array
-        # only_colors = mesh.visual.to_color().vertex_colors
-        # only_colors = np.asarray(only_colors)
-        # # If we want to add the color information to the mesh uncomment this part
-        # mesh.visual = mesh.visual.to_color()
+        # Transform the texture information to color information, mapping it to each vertex. Transform it to a numpy array
+        only_colors = mesh.visual.to_color().vertex_colors
+        only_colors = np.asarray(only_colors)
+        # If we want to add the color information to the mesh uncomment this part
+        mesh.visual = mesh.visual.to_color()
 
-        # # Extract the mesh vertices
-        # mesh_verts = mesh.vertices
+        # Extract the mesh vertices
+        mesh_verts = mesh.vertices
 
-        # # We use the ProximityQuery built-in function to get the closest voxel point centers to each vertex of the mesh
-        # _,vert_idx = trimesh.proximity.ProximityQuery(mesh).vertex(voxel.points)
+        # We use the ProximityQuery built-in function to get the closest voxel point centers to each vertex of the mesh
+        _,vert_idx = trimesh.proximity.ProximityQuery(mesh).vertex(voxel.points)
 
-        # # We initialize a array of zeros of size X,Y,Z,4 to contain the colors for each voxel of the voxelized mesh in the grid
-        # cube_color=np.zeros([voxel.shape[0],voxel.shape[1],voxel.shape[2],4])
+        # We initialize a array of zeros of size X,Y,Z,4 to contain the colors for each voxel of the voxelized mesh in the grid
+        cube_color=np.zeros([voxel.shape[0],voxel.shape[1],voxel.shape[2],4])
 
-        # # We loop through all the calculated closest voxel points
-        # for idx, vert in enumerate(vert_idx):
-        #     # Get the voxel grid index of each closets voxel center point
-        #     vox_verts = voxel.points_to_indices(mesh_verts[vert])
-        #     # Get the color vertex color
-        #     curr_color = only_colors[vert]
-        #     # Set the alpha channel of the color
-        #     curr_color[3] = 255
-        #     # add the color to the specific voxel grid index 
-        #     cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = curr_color
-        # # generate a voxelized mesh from the voxel grid representation, using the calculated colors 
-        # voxelized_mesh = voxel.as_boxes(colors=cube_color)
-        # voxelized_mesh.show()
+        # We loop through all the calculated closest voxel points
+        for _, vert in enumerate(vert_idx):
+            # Get the voxel grid index of each closets voxel center point
+            vox_verts = voxel.points_to_indices(mesh_verts[vert])
+            # Get the color vertex color
+            curr_color = only_colors[vert]
+            # Set the alpha channel of the color
+            curr_color[3] = 255
+            # add the color to the specific voxel grid index 
+            cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = curr_color
+        # generate a voxelized mesh from the voxel grid representation, using the calculated colors 
+        return voxel
+
+    def get_voxel_obj_arr(self):
+        if self.voxel_object == None:
+            self.voxelize()
+        return self.voxel_object.matrix
+    
+    def show_voxel_plot(self):
+        arr = self.get_voxel_obj_arr()
+        ax = plt.figure().add_subplot(projection='3d')
+        ax.voxels(arr)
+        plt.show()
