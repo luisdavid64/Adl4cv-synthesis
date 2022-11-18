@@ -7,6 +7,7 @@ from simple_3dviz.behaviours.misc import LightToCamera
 from threed_future_labels import THREED_FUTURE_LABELS
 import matplotlib.pyplot as plt
 import trimesh
+from utils import normalize_rgb
 
 try:
     from simple_3dviz.window import show
@@ -153,7 +154,7 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         self.voxel_object = None
 
     # Voxelize with trimesh
-    def voxelize(self, pitch=0.1):
+    def voxelize(self, pitch=0.05):
         mesh = self.raw_model(skip_texture=False, skip_materials=False)
         mesh.fill_holes()
         voxel = mesh.voxelized(pitch=pitch).hollow()
@@ -182,7 +183,7 @@ class VoxelThreedFutureModel(ThreedFutureModel):
             # Set the alpha channel of the color
             curr_color[3] = 255
             # add the color to the specific voxel grid index 
-            cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = curr_color / 255
+            cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = normalize_rgb(curr_color) 
             # add the color to the specific voxel grid index 
         self.voxel_color_map = cube_color
         return voxel
