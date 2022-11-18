@@ -12,3 +12,7 @@ create a conda environment called ```project``` using
 conda env create -f environment.yaml
 conda activate project
 ```
+## Dataset
+The project is based on the 
+[3D-FUTURE](https://www.google.com/search?q=3d-future&oq=3d-fut&aqs=chrome.1.69i57j0j0i30l8.3909j0j7&sourceid=chrome&ie=UTF-8)
+dataset. The dataset can be obtained in the [this webpage](https://tianchi.aliyun.com/specials/promotion/alibaba-3d-scene-dataset).
