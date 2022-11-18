@@ -163,28 +163,20 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         # Transform the texture information to color information, mapping it to each vertex. Transform it to a numpy array
         only_colors = mesh.visual.to_color().vertex_colors
         only_colors = np.asarray(only_colors)
-        # If we want to add the color information to the mesh uncomment this part
+
         mesh.visual = mesh.visual.to_color()
 
-        # Extract the mesh vertices
         mesh_verts = mesh.vertices
 
-        # We use the ProximityQuery built-in function to get the closest voxel point centers to each vertex of the mesh
         _,vert_idx = trimesh.proximity.ProximityQuery(mesh).vertex(voxel.points)
 
-        # We initialize a array of zeros of size X,Y,Z,4 to contain the colors for each voxel of the voxelized mesh in the grid
         cube_color=np.zeros([voxel.shape[0],voxel.shape[1],voxel.shape[2],4])
-        # We loop through all the calculated closest voxel points
+
         for _, vert in enumerate(vert_idx):
-            # Get the voxel grid index of each closets voxel center point
             vox_verts = voxel.points_to_indices(mesh_verts[vert])
-            # Get the color vertex color
             curr_color = only_colors[vert]
-            # Set the alpha channel of the color
             curr_color[3] = 255
-            # add the color to the specific voxel grid index 
             cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = normalize_rgb(curr_color) 
-            # add the color to the specific voxel grid index 
         self.voxel_color_map = cube_color
         return voxel
 
