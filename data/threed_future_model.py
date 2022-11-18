@@ -1,13 +1,14 @@
 
-from functools import cached_property
 import os
 import numpy as np
-from simple_3dviz import Lines, Mesh, Spherecloud
-from simple_3dviz.renderables.textured_mesh import Material, TexturedMesh
-from simple_3dviz.behaviours.keyboard import SnapshotOnKey
+from simple_3dviz import Mesh
+from simple_3dviz.renderables.textured_mesh import TexturedMesh
 from simple_3dviz.behaviours.misc import LightToCamera
 from threed_future_labels import THREED_FUTURE_LABELS
+import matplotlib.pyplot as plt
 import trimesh
+from utils import normalize_rgb
+
 try:
     from simple_3dviz.window import show
 except ImportError:
@@ -66,6 +67,14 @@ class ThreedFutureModel(BaseThreedFutureModel):
         )
 
     @property
+    def normalized_model_path(self):
+        return os.path.join(
+            self.path_to_models,
+            self.model_jid,
+            "normalized_model.obj"
+        )
+
+    @property
     def texture_image_path(self):
         return os.path.join(
             self.path_to_models,
@@ -73,14 +82,14 @@ class ThreedFutureModel(BaseThreedFutureModel):
             "texture.png"
         )
 
-    def raw_model(self):
+    def raw_model(self, skip_texture=True, skip_materials=True):
         try:
             return trimesh.load(
                 self.raw_model_path,
                 process=False,
                 force="mesh",
-                skip_materials=True,
-                skip_texture=True
+                skip_materials=skip_materials,
+                skip_texture=skip_texture,
             )
         except:
             import pdb
@@ -132,3 +141,55 @@ class ThreedFutureModel(BaseThreedFutureModel):
         )
         model.label = self.label
         return model
+
+class VoxelThreedFutureModel(ThreedFutureModel):
+    def __init__(
+        self,
+        model_jid,
+        model_info,
+        scale,
+        path_to_models
+    ):
+        super().__init__(model_jid, model_info, scale, path_to_models)
+        self.voxel_object = None
+
+    # Voxelize with trimesh
+    def voxelize(self, pitch=0.05):
+        mesh = self.raw_model(skip_texture=False, skip_materials=False)
+        mesh.fill_holes()
+        voxel = mesh.voxelized(pitch=pitch).hollow()
+        self.voxel_object = voxel
+
+        # Transform the texture information to color information, mapping it to each vertex. Transform it to a numpy array
+        only_colors = mesh.visual.to_color().vertex_colors
+        only_colors = np.asarray(only_colors)
+
+        mesh.visual = mesh.visual.to_color()
+
+        mesh_verts = mesh.vertices
+
+        _,vert_idx = trimesh.proximity.ProximityQuery(mesh).vertex(voxel.points)
+
+        cube_color=np.zeros([voxel.shape[0],voxel.shape[1],voxel.shape[2],4])
+
+        for _, vert in enumerate(vert_idx):
+            vox_verts = voxel.points_to_indices(mesh_verts[vert])
+            curr_color = only_colors[vert]
+            curr_color[3] = 255
+            cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = normalize_rgb(curr_color) 
+        self.voxel_color_map = cube_color
+        return voxel
+
+    def get_voxel_obj_arr(self):
+        if self.voxel_object == None:
+            self.voxelize()
+        return self.voxel_object.matrix
+    
+    def show_voxel_plot(self, use_texture=False):
+        arr = self.get_voxel_obj_arr()
+        ax = plt.figure().add_subplot(projection='3d')
+        if use_texture:
+            ax.voxels(arr, facecolors=self.voxel_color_map)
+        else:
+            ax.voxels(arr)
+        plt.show()
