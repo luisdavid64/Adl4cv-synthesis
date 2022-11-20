@@ -99,15 +99,21 @@ class ThreedFutureModel(BaseThreedFutureModel):
             print(self.raw_model_path, flush=True)
             raise
 
-    def raw_model_transformed(self, offset=[[0, 0, 0]]):
-        model = self.raw_model()
-        faces = np.array(model.faces)
-        vertices = self._transform(np.array(model.vertices)) + offset
-
-        return trimesh.Trimesh(vertices, faces)
-
-    def centroid(self, offset=[[0, 0, 0]]):
-        return self.corners(offset).mean(axis=0)
+    def normalized_model(self, skip_texture=True, skip_materials=True):
+        try:
+            return trimesh.load(
+                self.normalized_model_path,
+                process=False,
+                force="mesh",
+                skip_materials=skip_materials,
+                skip_texture=skip_texture,
+            )
+        except:
+            import pdb
+            pdb.set_trace()
+            print("Loading model failed", flush=True)
+            print(self.raw_model_path, flush=True)
+            raise
 
     @property
     def label(self):
@@ -161,8 +167,8 @@ class VoxelThreedFutureModel(ThreedFutureModel):
             return [0,0,0,0]
 
     # Voxelize with trimesh
-    def voxelize(self, pitch=0.05):
-        mesh = self.raw_model(skip_texture=False, skip_materials=False)
+    def voxelize(self, pitch=1/32):
+        mesh = self.normalized_model(skip_texture=False, skip_materials=False)
         mesh.fill_holes()
         voxel = mesh.voxelized(pitch=pitch).hollow()
         self.voxel_object = voxel
