@@ -34,14 +34,17 @@ def main(argv):
         
     # We need model data
     assert(model_info != None)
-    
+
     for model in model_info:
         if model["category"] and lower_slash_format(model["category"]) in future_labels:
-            VoxelThreedFutureModel(
+            object = VoxelThreedFutureModel(
                 model_jid = model["model_id"],
                 model_info= model,
                 scale=1,
                 path_to_models=root_path
             )
+
+            
+
 if __name__ == "__main__":
     main(sys.argv[1:])
