@@ -1,0 +1,39 @@
+Get ATISS network to generate mesh
+
+TODO:
+1. Train ATISS network (on e.g. bedroom scenes)
+Goal: 21.11
+Alex
+
+2. Voxelize furniture dataset (preprocessing)
+Goal: 21.11
+no color for now
+possible sizes 32^3 64^3
+Luis
+
+3. Create Autoencoder network (later variational)
+Goal: 25.11 (or earlier)
+Alex
+similar to https://github.com/kdj842969/3D-Autoencoder
+
+4. Pretrain Autoencoder on voxelized dataset of furniture
+Right after 3
+Alex
+
+5. Create MLP to replace encoder part of autoencoder
+Luis
+
+6. Train MLP using the whole network structure (ATISS => MLP => Decoder) (freeze weights for other networks)
+Right after 5
+Alex
+
+7. Pray it works
+Both :)
+
+Overall Goal:
+Sunday 27.11
+
+Visualizations:
+Show Autoencoder input/output
+Rendered scenes from ATISS
+Loss graphs/Training data
