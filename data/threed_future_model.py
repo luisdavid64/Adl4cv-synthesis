@@ -167,35 +167,48 @@ class VoxelThreedFutureModel(ThreedFutureModel):
             return [0,0,0,0]
 
     # Voxelize with trimesh
-    def voxelize(self, pitch=1/32):
+    def voxelize(self, pitch=1/31):
         mesh = self.normalized_model(skip_texture=False, skip_materials=False)
         mesh.fill_holes()
-        voxel = mesh.voxelized(pitch=pitch).hollow()
-        self.voxel_object = voxel
+        # Pack mesh into unit cube to normalize voxel creation
+        dim_scales = mesh.extents
+        mesh.apply_scale(1.0 / dim_scales)
+        self.voxel_object = mesh.voxelized(pitch=pitch).hollow()
+        re_scale = np.diag((np.append(dim_scales,1)))
+        self.voxel_object.apply_transform(re_scale)
 
-        # Transform the texture information to color information, mapping it to each vertex. Transform it to a numpy array
-        only_colors = mesh.visual.to_color().vertex_colors
-        only_colors = np.asarray(only_colors)
+        return self.voxel_object
 
-        mesh.visual = mesh.visual.to_color()
+    # def voxelize_with_texture(self, pitch=1/32):
+    #     mesh = self.normalized_model(skip_texture=False, skip_materials=False)
+    #     mesh.fill_holes()
+    #     voxel = mesh.voxelized(pitch=pitch).hollow()
+    #     self.voxel_object = voxel
 
-        mesh_verts = mesh.vertices
+    #     # Transform the texture information to color information, mapping it to each vertex. Transform it to a numpy array
+    #     only_colors = mesh.visual.to_color().vertex_colors
+    #     only_colors = np.asarray(only_colors)
 
-        _,vert_idx = trimesh.proximity.ProximityQuery(mesh).vertex(voxel.points)
+    #     mesh.visual = mesh.visual.to_color()
 
-        cube_color=np.zeros([voxel.shape[0],voxel.shape[1],voxel.shape[2],4])
+    #     mesh_verts = mesh.vertices
 
-        for _, vert in enumerate(vert_idx):
-            vox_verts = voxel.points_to_indices(mesh_verts[vert])
-            curr_color = only_colors[vert]
-            curr_color[3] = 255
-            cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = normalize_rgb(curr_color) 
-        self.voxel_color_map = cube_color 
-        # Fill in activated voxels with no proximity info as white voxels
-        voxel_int = np.stack((voxel.matrix,)*4, axis=-1).astype(int)
-        index_0 = (self.voxel_color_map == 0)
-        self.voxel_color_map[index_0] = voxel_int[index_0]
-        return voxel
+    #     _,vert_idx = trimesh.proximity.ProximityQuery(mesh).vertex(voxel.points)
+
+    #     cube_color=np.zeros([voxel.shape[0],voxel.shape[1],voxel.shape[2],4])
+
+    #     for _, vert in enumerate(vert_idx):
+    #         vox_verts = voxel.points_to_indices(mesh_verts[vert])
+    #         curr_color = only_colors[vert]
+    #         curr_color[3] = 255
+    #         cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = normalize_rgb(curr_color) 
+    #     self.voxel_color_map = cube_color 
+    #     # Fill in activated voxels with no proximity info as white voxels
+    #     voxel_int = np.stack((voxel.matrix,)*4, axis=-1).astype(int)
+    #     index_0 = (self.voxel_color_map == 0)
+    #     self.voxel_color_map[index_0] = voxel_int[index_0]
+    #     return voxel
+    
 
     def get_voxel_obj_arr(self):
         if self.voxel_object == None:

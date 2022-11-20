@@ -35,6 +35,8 @@ def main(argv):
     # We need model data
     assert(model_info != None)
 
+    future_labels = THREED_FUTURE_LABELS.values()
+
     for model in model_info:
         if model["category"] and lower_slash_format(model["category"]) in future_labels:
             object = VoxelThreedFutureModel(
@@ -44,7 +46,7 @@ def main(argv):
                 path_to_models=root_path
             )
 
-            
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
