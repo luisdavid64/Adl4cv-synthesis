@@ -174,9 +174,10 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         dim_scales = mesh.extents
         mesh.apply_scale(1.0 / dim_scales)
         self.voxel_object = mesh.voxelized(pitch=pitch).hollow()
+
+        #Re-scale voxel dimensions with transform
         re_scale = np.diag((np.append(dim_scales,1)))
         self.voxel_object.apply_transform(re_scale)
-
         return self.voxel_object
 
     # def voxelize_with_texture(self, pitch=1/32):
@@ -210,7 +211,7 @@ class VoxelThreedFutureModel(ThreedFutureModel):
     #     return voxel
     
 
-    def get_voxel_obj_arr(self):
+    def get_voxel_obj_matrix(self):
         if self.voxel_object == None:
             self.voxelize()
         return self.voxel_object.matrix
@@ -236,8 +237,9 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
         ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
     
+    # Visualization of voxels on matplotlib
     def show_voxel_plot(self, use_texture=False, preserve_axis_scale=True):
-        arr = self.get_voxel_obj_arr()
+        arr = self.get_voxel_obj_matrix()
         fig = plt.figure()
         ax = fig.gca(projection=Axes3D.name)
         ax.set_xlabel('X')
@@ -252,8 +254,15 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         if show:
             plt.show()
 
+    # Alternative visualization: remeshed voxel
+    def show_remeshed(self):
+        if self.voxel_object == None:
+            self.voxelize()
+        self.voxel_object.show()
+
+
     # Marching cubes reconstruction of matrix for sanity check
     def marching_cubes(self):
-        voxel = self.get_voxel_obj_arr()
+        voxel = self.get_voxel_obj_matrix()
         mesh = trimesh.voxel.ops.matrix_to_marching_cubes(voxel, pitch=1.0)
         mesh.show()

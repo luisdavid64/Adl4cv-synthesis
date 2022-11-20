@@ -35,6 +35,10 @@ def main(argv):
     # We need model data
     assert(model_info != None)
 
+    # Check if output directory exists and if it doesn't create it
+    if not os.path.exists(args["output_directory"]):
+        os.makedirs(args["output_directory"])
+
     future_labels = THREED_FUTURE_LABELS.values()
 
     for model in model_info:
@@ -45,6 +49,8 @@ def main(argv):
                 scale=1,
                 path_to_models=root_path
             )
+
+            voxel = object.get_voxel_obj_arr()
 
 
 
