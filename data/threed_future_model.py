@@ -153,6 +153,12 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         super().__init__(model_jid, model_info, scale, path_to_models)
         self.voxel_object = None
 
+    def f(x):
+        if x == 1:
+            return [230,230,230,255]
+        else:
+            return [0,0,0,0]
+
     # Voxelize with trimesh
     def voxelize(self, pitch=0.05):
         mesh = self.raw_model(skip_texture=False, skip_materials=False)
@@ -177,7 +183,11 @@ class VoxelThreedFutureModel(ThreedFutureModel):
             curr_color = only_colors[vert]
             curr_color[3] = 255
             cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = normalize_rgb(curr_color) 
-        self.voxel_color_map = cube_color
+        self.voxel_color_map = cube_color 
+        # Fill in activated voxels with no proximity info as white voxels
+        # voxel_int = np.stack((voxel.matrix,)*4, axis=-1).astype(int)
+        # index_0 = (self.voxel_color_map == 0)
+        # self.voxel_color_map[index_0] = voxel_int[index_0]
         return voxel
 
     def get_voxel_obj_arr(self):
