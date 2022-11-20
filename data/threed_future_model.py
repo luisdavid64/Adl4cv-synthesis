@@ -7,7 +7,8 @@ from simple_3dviz.behaviours.misc import LightToCamera
 from threed_future_labels import THREED_FUTURE_LABELS
 import matplotlib.pyplot as plt
 import trimesh
-from utils import normalize_rgb
+from mpl_toolkits.mplot3d import Axes3D
+from utils import normalize_rgb, set_equal_plot_axes
 
 try:
     from simple_3dviz.window import show
@@ -153,6 +154,12 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         super().__init__(model_jid, model_info, scale, path_to_models)
         self.voxel_object = None
 
+    def f(x):
+        if x == 1:
+            return [230,230,230,255]
+        else:
+            return [0,0,0,0]
+
     # Voxelize with trimesh
     def voxelize(self, pitch=0.05):
         mesh = self.raw_model(skip_texture=False, skip_materials=False)
@@ -177,19 +184,57 @@ class VoxelThreedFutureModel(ThreedFutureModel):
             curr_color = only_colors[vert]
             curr_color[3] = 255
             cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = normalize_rgb(curr_color) 
-        self.voxel_color_map = cube_color
+        self.voxel_color_map = cube_color 
+        # Fill in activated voxels with no proximity info as white voxels
+        voxel_int = np.stack((voxel.matrix,)*4, axis=-1).astype(int)
+        index_0 = (self.voxel_color_map == 0)
+        self.voxel_color_map[index_0] = voxel_int[index_0]
         return voxel
 
     def get_voxel_obj_arr(self):
         if self.voxel_object == None:
             self.voxelize()
         return self.voxel_object.matrix
+
+    def set_axes_equal(self,ax):
+
+        x_limits = ax.get_xlim3d()
+        y_limits = ax.get_ylim3d()
+        z_limits = ax.get_zlim3d()
+
+        x_range = abs(x_limits[1] - x_limits[0])
+        x_middle = np.mean(x_limits)
+        y_range = abs(y_limits[1] - y_limits[0])
+        y_middle = np.mean(y_limits)
+        z_range = abs(z_limits[1] - z_limits[0])
+        z_middle = np.mean(z_limits)
+
+        # The plot bounding box is a sphere in the sense of the infinity
+        # norm, hence I call half the max range the plot radius.
+        plot_radius = 0.5*max([x_range, y_range, z_range])
+
+        ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
+        ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
+        ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
     
-    def show_voxel_plot(self, use_texture=False):
+    def show_voxel_plot(self, use_texture=False, preserve_axis_scale=True):
         arr = self.get_voxel_obj_arr()
-        ax = plt.figure().add_subplot(projection='3d')
+        fig = plt.figure()
+        ax = fig.gca(projection=Axes3D.name)
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
         if use_texture:
             ax.voxels(arr, facecolors=self.voxel_color_map)
         else:
             ax.voxels(arr)
-        plt.show()
+        if preserve_axis_scale:
+            set_equal_plot_axes(ax)
+        if show:
+            plt.show()
+
+    # Marching cubes reconstruction of matrix for sanity check
+    def marching_cubes(self):
+        voxel = self.get_voxel_obj_arr()
+        mesh = trimesh.voxel.ops.matrix_to_marching_cubes(voxel, pitch=1.0)
+        mesh.show()
