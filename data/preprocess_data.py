@@ -180,11 +180,15 @@ def main(argv):
         os.makedirs(args.output_directory)
 
     data =  ThreedFutureDatasetParser(root=root_path)
+
     if args.p:
-        print("--- Processing dataset sequentially ---")
-    else:
         print("--- Processing dataset in parallel ---")
+    else:
+        print("--- Processing dataset sequentially ---")
+
+    # Produce json file for statistics file in output directory
     serialize_stats(data, args.output_directory)
+    # Pickle dataset to /tmp/threed_future.pkl
     pickle_dataset(data, args.p)
 
     
