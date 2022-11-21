@@ -22,5 +22,7 @@ dataset. The dataset can be obtained in [this webpage](https://tianchi.aliyun.co
 Once you have downloaded the dataset you need to run the `preprocess_data.py` script in order to prepare the data to be able to train a model. To run the preprocessing script run
 
 ```
-python preprocess_data.py path_to_output_dir path_to_3d_future_dataset_dir
+python preprocess_data.py path_to_output_dir path_to_3d_future_dataset_dir -p
 ```
+
+The optional p flag tries to parallelize the preprocessing step for better performance.
