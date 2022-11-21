@@ -9,3 +9,4 @@ if not root:
 
 # Import pickled dataset
 dataset, stats = ThreedFutureDataset.from_pickled_dataset("/tmp/threed_future.pkl", "/Users/luisreyes/Courses/ADL4CV/Project/data/output/dataset_stats.json")
+print(len(dataset))

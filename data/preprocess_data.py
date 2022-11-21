@@ -13,6 +13,10 @@ from utils import lower_slash_format
 import logging
 from tqdm import tqdm
 
+# Supress trimesh logging in all processes
+logger = logging.getLogger("trimesh")
+logger.setLevel(logging.ERROR)
+
 
 class ThreedFutureDatasetParser(Dataset):
     def __init__(self, *args,
@@ -93,9 +97,6 @@ def pickle_threed_future_dataset_parallel(data):
 
     num_cores = (multiprocessing.cpu_count() - 1) or 1 
     with ProcessPoolExecutor(max_workers=num_cores) as pool:
-        # Supress trimesh logging in all processes
-        logger = logging.getLogger("trimesh")
-        logger.setLevel(logging.ERROR)
         with tqdm(total=len(data)) as progress:
             progress.set_description("Processing dataset")
             futures = []
@@ -108,8 +109,8 @@ def pickle_threed_future_dataset_parallel(data):
                 object = future.result()
                 objects.append(object)
 
-    pickle.dump(objects, open("/tmp/threed_future_test.pkl", "wb"))
-    print("Data saved at: /tmp/threed_future_test.pkl")
+    pickle.dump(objects, open("/tmp/threed_future.pkl", "wb"))
+    print("Data saved at: /tmp/threed_future.pkl")
 
 def pickle_threed_future_dataset(data):
     objects = []
