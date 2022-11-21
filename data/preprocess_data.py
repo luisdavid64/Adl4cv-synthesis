@@ -1,4 +1,6 @@
+from concurrent.futures import ProcessPoolExecutor
 import json
+import multiprocessing
 import os
 import numpy as np
 import pickle
@@ -9,6 +11,8 @@ from threed_future_labels import THREED_FUTURE_LABELS
 from threed_future_model import VoxelThreedFutureModel
 from utils import lower_slash_format
 import logging
+from tqdm import tqdm
+
 
 class ThreedFutureDatasetParser(Dataset):
     def __init__(self, *args,
@@ -76,6 +80,37 @@ class ThreedFutureDatasetParser(Dataset):
             for s in self._super_categories
         ])
 
+def process_object(model):
+    matrix = model.get_voxel_obj_matrix(skip_texture=True)
+    return ({
+        "model_name" : model.model_jid,
+        "label" : model.label,
+        "matrix" : matrix,
+    })
+
+
+def pickle_threed_future_dataset_parallel(data):
+
+    num_cores = multiprocessing.cpu_count()
+    with ProcessPoolExecutor(max_workers=num_cores) as pool:
+        # Supress trimesh logging in all processes
+        logger = logging.getLogger("trimesh")
+        logger.setLevel(logging.ERROR)
+        with tqdm(total=len(data)) as progress:
+            progress.set_description("Processing dataset")
+            futures = []
+            for model in data:
+                future = pool.submit(process_object, model)
+                future.add_done_callback(lambda p: progress.update())
+                futures.append(future)
+            objects = []
+            for future in futures:
+                object = future.result()
+                objects.append(object)
+
+    pickle.dump(objects, open("/tmp/threed_future_test.pkl", "wb"))
+    print("Data saved at: /tmp/threed_future_test.pkl")
+
 def pickle_threed_future_dataset(data):
     objects = []
     print("Parsing dataset ", end="")
@@ -92,6 +127,13 @@ def pickle_threed_future_dataset(data):
     print()
     pickle.dump(objects, open("/tmp/threed_future.pkl", "wb"))
     print("Data saved at: /tmp/threed_future.pkl")
+
+def pickle_dataset(data, parallelize=False):
+    if parallelize:
+        pickle_threed_future_dataset_parallel(data)
+    else:
+        pickle_threed_future_dataset(data)
+
 
 def serialize_stats(data, output_dir):
     frequencies = data.object_type_frequencies
@@ -123,6 +165,7 @@ def main(argv):
         "path_to_3d_future_dataset_directory",
         help="Path to the 3D-FRONT dataset"
     )
+    parser.add_argument('-p', action='store_true')
     args = parser.parse_args(argv)
 
     root_path = args.path_to_3d_future_dataset_directory
@@ -137,12 +180,12 @@ def main(argv):
         os.makedirs(args.output_directory)
 
     data =  ThreedFutureDatasetParser(root=root_path)
-    
+    if args.p:
+        print("--- Processing dataset sequentially ---")
+    else:
+        print("--- Processing dataset in parallel ---")
     serialize_stats(data, args.output_directory)
-    # Supress trimesh logging
-    logger = logging.getLogger("trimesh")
-    logger.setLevel(logging.ERROR)
-    pickle_threed_future_dataset(data)
+    pickle_dataset(data, args.p)
 
     
 
