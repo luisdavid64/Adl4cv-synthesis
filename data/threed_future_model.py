@@ -167,12 +167,6 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         super().__init__(model_jid, model_info, scale, path_to_models)
         self.voxel_object = None
 
-    def f(x):
-        if x == 1:
-            return [230,230,230,255]
-        else:
-            return [0,0,0,0]
-
     # Voxelize with trimesh
     def voxelize(self, pitch=1/31, skip_texture=False):
         mesh = self.normalized_model(skip_texture=skip_texture, skip_materials=skip_texture)
@@ -220,3 +214,4 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         voxel = self.get_voxel_obj_matrix()
         mesh = trimesh.voxel.ops.matrix_to_marching_cubes(voxel, pitch=1.0)
         mesh.show()
+    
