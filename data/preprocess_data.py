@@ -2,7 +2,6 @@ from concurrent.futures import ProcessPoolExecutor
 import json
 import multiprocessing
 import os
-import numpy as np
 import pickle
 import argparse
 import sys
