@@ -25,4 +25,7 @@ Once you have downloaded the dataset you need to run the `preprocess_data.py` sc
 python preprocess_data.py path_to_output_dir path_to_3d_future_dataset_dir -p
 ```
 
-The optional p flag tries to parallelize the preprocessing step for better performance.
+The optional p flag tries to parallelize the preprocessing step for better performance. The preprocessing script takes the 3D-FUTURE dataset and returns a list of objects consisting of
+- model name
+- label
+- $32x32x32$ voxel grid
