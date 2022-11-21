@@ -91,7 +91,7 @@ def process_object(model):
 
 def pickle_threed_future_dataset_parallel(data):
 
-    num_cores = multiprocessing.cpu_count()
+    num_cores = (multiprocessing.cpu_count() - 1) or 1 
     with ProcessPoolExecutor(max_workers=num_cores) as pool:
         # Supress trimesh logging in all processes
         logger = logging.getLogger("trimesh")
