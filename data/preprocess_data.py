@@ -80,13 +80,12 @@ def pickle_threed_future_dataset(data):
     objects = []
     print("Parsing dataset ", end="")
     for i in range(len(data)):
-    # for i in range(10):
         model = data[i]
         matrix = model.get_voxel_obj_matrix(skip_texture=True)
         objects.append({
             "model_name" : model.model_jid,
+            "label" : model.label,
             "matrix" : matrix,
-            "label" : model.label
         })
         s = "{:5d} / {:5d}".format(i, len(data))
         print(s, flush=True, end="\b"*len(s))
