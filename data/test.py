@@ -1,3 +1,4 @@
+from threed_future_model import VoxelThreedFutureModel
 from threed_future_dataset import ThreedFutureDataset
 import os
 
@@ -9,4 +10,5 @@ if not root:
 
 # Import pickled dataset
 dataset, stats = ThreedFutureDataset.from_pickled_dataset("/tmp/threed_future.pkl", "/Users/luisreyes/Courses/ADL4CV/Project/data/output/dataset_stats.json")
-print(len(dataset))
+model = VoxelThreedFutureModel(voxel_object = dataset[0])
+model.show_voxel_plot()
