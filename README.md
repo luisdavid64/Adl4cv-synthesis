@@ -19,13 +19,13 @@ dataset. The dataset can be obtained in [this webpage](https://tianchi.aliyun.co
 
 ### Data Preprocessing
 
-Once you have downloaded the dataset you need to run the `preprocess_data.py` script in order to prepare the data to be able to train a model. To run the preprocessing script run
+Once you have downloaded the dataset you need to run the `preprocess_data.py` script to prepare the data for training. To run the preprocessing script run
 
 ```
 python preprocess_data.py path_to_output_dir path_to_3d_future_dataset_dir -p
 ```
 
-The ```-p``` flag tries to parallelize the preprocessing step for better performance. The script produces a pickle file which takes the 3D-FUTURE dataset and transforms each object into a:
+The ```-p``` flag tries to parallelize processing for better performance. The script produces a pickle file which takes the 3D-FUTURE dataset and transforms each object into a:
 - model name
 - label
 - a $32\times 32 \times 32$ voxel grid
