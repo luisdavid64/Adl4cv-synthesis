@@ -145,16 +145,16 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         model_info=None,
         scale=None,
         path_to_models=None,
-        voxel_matrix=None
+        voxel_object=None
     ):
         self.tmesh_voxelgrid = None
         self.voxel_matrix = None
         if model_jid and model_info:
             super().__init__(model_jid, model_info, scale, path_to_models)
-        if voxel_matrix:
-            self.voxel_matrix = voxel_matrix
-            self.label = voxel_matrix["label"]
-            self.model_jid = voxel_matrix["model_name"]
+        if voxel_object:
+            self.voxel_matrix = voxel_object["matrix"]
+            self.label = voxel_object["label"]
+            self.model_jid = voxel_object["model_name"]
     
     # Labels should now be structured
     @property
@@ -167,7 +167,7 @@ class VoxelThreedFutureModel(ThreedFutureModel):
 
     def check_voxelized(self, skip_texture=False):
         # Either voxel matrix provided directly or computed from Mesh
-        if self.voxel_matrix == None:
+        if self.voxel_matrix is None:
             #If matrix not provided directly, a model_jid must be provided
             assert (self.model_jid != None), "Assertion Error: No model to voxelize"
             self.voxelize(skip_texture=skip_texture)
