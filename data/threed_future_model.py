@@ -177,6 +177,7 @@ class VoxelThreedFutureModel(ThreedFutureModel):
     def voxelize(self, pitch_factor=32, skip_texture=False):
         assert (self.model_jid != None), "Assertion Error: No model to voxelize"
         mesh = self.normalized_model(skip_texture=skip_texture, skip_materials=skip_texture)
+        #Model pitch according to longest extent
         self.tmesh_voxelgrid = mesh.voxelized(pitch=mesh.extents.max()/pitch_factor)
         sparse_indices = self.tmesh_voxelgrid.sparse_indices.T
         self.voxel_matrix = reshape_voxel_grid(sparse_indices, dims=np.array([32,32,32]))
@@ -200,6 +201,8 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
+        # Rotate axis so y points up
+        ax.view_init(azim=-60, elev=120)
         if use_texture:
             ax.voxels(self.voxel_matrix, facecolors=self.voxel_color_map)
         else:
