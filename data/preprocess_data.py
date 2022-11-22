@@ -84,7 +84,7 @@ class ThreedFutureDatasetParser(Dataset):
         ])
 
 def process_object(model):
-    matrix = model.get_voxel_obj_matrix(skip_texture=True)
+    matrix = model.get_voxel_matrix(skip_texture=True)
     return ({
         "model_name" : model.model_jid,
         "label" : model.label,

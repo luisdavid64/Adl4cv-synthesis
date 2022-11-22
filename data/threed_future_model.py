@@ -184,10 +184,8 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         return self.tmesh_voxelgrid
 
     def get_voxel_matrix(self, skip_texture=False):
-        if self.voxel_matrix:
-            return self.voxel_matrix
         self.check_voxelized(skip_texture=skip_texture)
-        return self.voxel_matrix.matrix
+        return self.voxel_matrix
 
     def get_voxel_obj_sparse(self, skip_texture=False):
         self.check_voxelized(skip_texture=skip_texture)
