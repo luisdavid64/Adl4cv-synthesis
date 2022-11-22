@@ -203,6 +203,8 @@ class VoxelThreedFutureModel(ThreedFutureModel):
     def get_voxel_obj_matrix(self, skip_texture=False):
         if self.voxel_object == None:
             self.voxelize(skip_texture=skip_texture)
+        if type(self.voxel_object) == trimesh.voxel.base.VoxelGrid:
+            return self.voxel_object.matrix
         return self.voxel_object["matrix"]
 
     # Visualization of voxels on matplotlib
