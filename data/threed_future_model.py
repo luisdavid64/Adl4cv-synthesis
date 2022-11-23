@@ -127,7 +127,7 @@ class ThreedFutureModel(BaseThreedFutureModel):
 
     @label.setter
     def label(self, _label):
-        self._label = THREED_FUTURE_LABELS[lower_slash_format(_label)]
+        self._label = _label 
 
     def show(
         self,
@@ -156,15 +156,6 @@ class VoxelThreedFutureModel(ThreedFutureModel):
             self.label = voxel_object["label"]
             self.model_jid = voxel_object["model_name"]
     
-    # Labels should now be structured
-    @property
-    def label(self):
-        return self._label
-        
-    @label.setter
-    def label(self, _label):
-        self._label = _label
-
     def check_voxelized(self, skip_texture=False):
         # Either voxel matrix provided directly or computed from Mesh
         if self.voxel_matrix is None:
