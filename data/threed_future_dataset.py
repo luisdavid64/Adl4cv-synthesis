@@ -70,3 +70,13 @@ class ThreedFutureDataset(Dataset):
             s.lower().replace(" / ", "/")
             for s in self._super_categories
         ])
+
+    # Use this method to unpickle voxelized data
+    @classmethod
+    def from_pickled_dataset(cls, path_to_pickled_dataset, stats_path = None):
+        with open(path_to_pickled_dataset, "rb") as f:
+            dataset = pickle.load(f)
+        if stats_path is not None:
+            with open(stats_path) as f:
+                stats = json.load(f)
+        return dataset, stats

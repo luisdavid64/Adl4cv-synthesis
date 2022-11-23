@@ -5,10 +5,10 @@ from simple_3dviz import Mesh
 from simple_3dviz.renderables.textured_mesh import TexturedMesh
 from simple_3dviz.behaviours.misc import LightToCamera
 from threed_future_labels import THREED_FUTURE_LABELS
+from utils import set_equal_plot_axes, lower_slash_format, reshape_voxel_grid
 import matplotlib.pyplot as plt
 import trimesh
 from mpl_toolkits.mplot3d import Axes3D
-from utils import normalize_rgb, set_equal_plot_axes
 
 try:
     from simple_3dviz.window import show
@@ -25,11 +25,15 @@ class BaseThreedFutureModel(object):
         self.scale = scale
 
     def _transform(self, vertices):
-        # the following code is adapted and slightly simplified from the
-        # 3D-Front toolbox (json2obj.py). It basically scales, rotates and
-        # translates the model based on the model info.
         vertices = vertices * self.scale
         return vertices
+    
+    def raw_model_transformed(self, offset=[[0, 0, 0]]):
+        model = self.raw_model()
+        faces = np.array(model.faces)
+        vertices = self._transform(np.array(model.vertices)) + offset
+
+        return trimesh.Trimesh(vertices, faces)
 
     def mesh_renderable(
         self,
@@ -83,7 +87,7 @@ class ThreedFutureModel(BaseThreedFutureModel):
             "texture.png"
         )
 
-    def raw_model(self, skip_texture=True, skip_materials=True):
+    def raw_model(self, skip_texture=False, skip_materials=False):
         try:
             return trimesh.load(
                 self.raw_model_path,
@@ -99,25 +103,31 @@ class ThreedFutureModel(BaseThreedFutureModel):
             print(self.raw_model_path, flush=True)
             raise
 
-    def raw_model_transformed(self, offset=[[0, 0, 0]]):
-        model = self.raw_model()
-        faces = np.array(model.faces)
-        vertices = self._transform(np.array(model.vertices)) + offset
-
-        return trimesh.Trimesh(vertices, faces)
-
-    def centroid(self, offset=[[0, 0, 0]]):
-        return self.corners(offset).mean(axis=0)
+    def normalized_model(self, skip_texture=False, skip_materials=False):
+        try:
+            return trimesh.load(
+                self.normalized_model_path,
+                process=False,
+                force="mesh",
+                skip_materials=skip_materials,
+                skip_texture=skip_texture,
+            )
+        except:
+            import pdb
+            pdb.set_trace()
+            print("Loading model failed", flush=True)
+            print(self.raw_model_path, flush=True)
+            raise
 
     @property
     def label(self):
         if self._label is None:
-            self._label = THREED_FUTURE_LABELS[self.model_info["category"].lower()]
+            self._label = THREED_FUTURE_LABELS[lower_slash_format(self.model_info["category"])]
         return self._label
 
     @label.setter
     def label(self, _label):
-        self._label = THREED_FUTURE_LABELS[_label.lower()]
+        self._label = _label 
 
     def show(
         self,
@@ -127,114 +137,78 @@ class ThreedFutureModel(BaseThreedFutureModel):
         renderables = self.mesh_renderable(offset=offset)
         show(renderables, behaviours=behaviours)
 
-    def one_hot_label(self, all_labels):
-        return np.eye(len(all_labels))[self.int_label(all_labels)]
-
-    def int_label(self, all_labels):
-        return all_labels.index(self.label)
-
-    def copy_from_other_model(self, other_model):
-        model = ThreedFutureModel(
-            model_jid=other_model.model_jid,
-            model_info=other_model.model_info,
-            scale=other_model.scale,
-            path_to_models=self.path_to_models
-        )
-        model.label = self.label
-        return model
 
 class VoxelThreedFutureModel(ThreedFutureModel):
     def __init__(
         self,
-        model_jid,
-        model_info,
-        scale,
-        path_to_models
+        model_jid=None,
+        model_info=None,
+        scale=None,
+        path_to_models=None,
+        voxel_object=None
     ):
-        super().__init__(model_jid, model_info, scale, path_to_models)
-        self.voxel_object = None
-
-    def f(x):
-        if x == 1:
-            return [230,230,230,255]
-        else:
-            return [0,0,0,0]
-
-    # Voxelize with trimesh
-    def voxelize(self, pitch=0.05):
-        mesh = self.raw_model(skip_texture=False, skip_materials=False)
-        mesh.fill_holes()
-        voxel = mesh.voxelized(pitch=pitch).hollow()
-        self.voxel_object = voxel
-
-        # Transform the texture information to color information, mapping it to each vertex. Transform it to a numpy array
-        only_colors = mesh.visual.to_color().vertex_colors
-        only_colors = np.asarray(only_colors)
-
-        mesh.visual = mesh.visual.to_color()
-
-        mesh_verts = mesh.vertices
-
-        _,vert_idx = trimesh.proximity.ProximityQuery(mesh).vertex(voxel.points)
-
-        cube_color=np.zeros([voxel.shape[0],voxel.shape[1],voxel.shape[2],4])
-
-        for _, vert in enumerate(vert_idx):
-            vox_verts = voxel.points_to_indices(mesh_verts[vert])
-            curr_color = only_colors[vert]
-            curr_color[3] = 255
-            cube_color[vox_verts[0],vox_verts[1], vox_verts[2],:] = normalize_rgb(curr_color) 
-        self.voxel_color_map = cube_color 
-        # Fill in activated voxels with no proximity info as white voxels
-        voxel_int = np.stack((voxel.matrix,)*4, axis=-1).astype(int)
-        index_0 = (self.voxel_color_map == 0)
-        self.voxel_color_map[index_0] = voxel_int[index_0]
-        return voxel
-
-    def get_voxel_obj_arr(self):
-        if self.voxel_object == None:
-            self.voxelize()
-        return self.voxel_object.matrix
-
-    def set_axes_equal(self,ax):
-
-        x_limits = ax.get_xlim3d()
-        y_limits = ax.get_ylim3d()
-        z_limits = ax.get_zlim3d()
-
-        x_range = abs(x_limits[1] - x_limits[0])
-        x_middle = np.mean(x_limits)
-        y_range = abs(y_limits[1] - y_limits[0])
-        y_middle = np.mean(y_limits)
-        z_range = abs(z_limits[1] - z_limits[0])
-        z_middle = np.mean(z_limits)
-
-        # The plot bounding box is a sphere in the sense of the infinity
-        # norm, hence I call half the max range the plot radius.
-        plot_radius = 0.5*max([x_range, y_range, z_range])
-
-        ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
-        ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
-        ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
+        self.tmesh_voxelgrid = None
+        self.voxel_matrix = None
+        if model_jid and model_info:
+            super().__init__(model_jid, model_info, scale, path_to_models)
+        if voxel_object:
+            self.voxel_matrix = voxel_object["matrix"]
+            self.label = voxel_object["label"]
+            self.model_jid = voxel_object["model_name"]
     
+    def check_voxelized(self, skip_texture=False):
+        # Either voxel matrix provided directly or computed from Mesh
+        if self.voxel_matrix is None:
+            #If matrix not provided directly, a model_jid must be provided
+            assert (self.model_jid != None), "No model to voxelize."
+            self.voxelize(skip_texture=skip_texture)
+
+
+    # Voxelize with trimesh. Only works if model_path provided
+    def voxelize(self, pitch_factor=32, skip_texture=False):
+        assert (self.model_jid != None), "No model to voxelize."
+        mesh = self.normalized_model(skip_texture=skip_texture, skip_materials=skip_texture)
+        #Model pitch according to longest extent
+        self.tmesh_voxelgrid = mesh.voxelized(pitch=mesh.extents.max()/pitch_factor)
+        sparse_indices = self.tmesh_voxelgrid.sparse_indices.T
+        self.voxel_matrix = reshape_voxel_grid(sparse_indices, dims=np.array([32,32,32]))
+        return self.tmesh_voxelgrid
+
+    def get_voxel_matrix(self, skip_texture=False):
+        self.check_voxelized(skip_texture=skip_texture)
+        return self.voxel_matrix
+
+    def get_voxel_obj_sparse(self, skip_texture=False):
+        self.check_voxelized(skip_texture=skip_texture)
+        return self.voxel_matrix.sparse_indices
+
+    # Visualization of voxels on matplotlib
     def show_voxel_plot(self, use_texture=False, preserve_axis_scale=True):
-        arr = self.get_voxel_obj_arr()
+        self.check_voxelized(skip_texture=use_texture)
         fig = plt.figure()
         ax = fig.gca(projection=Axes3D.name)
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
+        # Rotate axis so y points up
+        ax.view_init(azim=-60, elev=120)
         if use_texture:
-            ax.voxels(arr, facecolors=self.voxel_color_map)
+            ax.voxels(self.voxel_matrix, facecolors=self.voxel_color_map)
         else:
-            ax.voxels(arr)
+            ax.voxels(self.voxel_matrix)
         if preserve_axis_scale:
             set_equal_plot_axes(ax)
         if show:
             plt.show()
 
+    # Alternative visualization: remeshed voxel
+    def show_remeshed(self, skip_texture=False):
+        self.check_voxelized(skip_texture=skip_texture)
+        self.tmesh_voxelgrid.show()
+
     # Marching cubes reconstruction of matrix for sanity check
-    def marching_cubes(self):
-        voxel = self.get_voxel_obj_arr()
-        mesh = trimesh.voxel.ops.matrix_to_marching_cubes(voxel, pitch=1.0)
+    def marching_cubes(self, skip_texture=False):
+        self.check_voxelized(skip_texture=skip_texture)
+        mesh = trimesh.voxel.ops.matrix_to_marching_cubes(self.voxel_matrix, pitch=1.0)
         mesh.show()
+    

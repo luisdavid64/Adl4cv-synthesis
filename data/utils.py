@@ -26,3 +26,19 @@ def set_equal_plot_axes(ax):
     ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
     ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
     ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
+
+# Reshape a voxel grid to a cube
+def reshape_voxel_grid(sparse, dims, dtype=np.bool):
+    if sparse.ndim!=2 or sparse.shape[0]!=3:
+        raise ValueError('voxel_data is wrong shape; should be 3xN array.')
+    if np.isscalar(dims):
+        dims = [dims]*3
+    dims = np.atleast_2d(dims).T
+    # truncate to integers
+    xyz = sparse.astype(np.int)
+    # discard voxels that fall outside dims
+    valid_ix = ~np.any((xyz < 0) | (xyz >= dims), 0)
+    xyz = xyz[:,valid_ix]
+    out = np.zeros(dims.flatten(), dtype=dtype)
+    out[tuple(xyz)] = True
+    return out

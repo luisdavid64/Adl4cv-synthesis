@@ -16,3 +16,16 @@ conda activate project
 The project is based on the 
 [3D-FUTURE](https://www.google.com/search?q=3d-future&oq=3d-fut&aqs=chrome.1.69i57j0j0i30l8.3909j0j7&sourceid=chrome&ie=UTF-8)
 dataset. The dataset can be obtained in [this webpage](https://tianchi.aliyun.com/specials/promotion/alibaba-3d-scene-dataset).
+
+### Data Preprocessing
+
+Once you have downloaded the dataset you need to run the `preprocess_data.py` script to prepare the data for training. To run the preprocessing script run
+
+```
+python preprocess_data.py path_to_output_dir path_to_3d_future_dataset_dir -p
+```
+
+The ```-p``` flag tries to parallelize processing for better performance. The script produces a pickle file which takes the 3D-FUTURE dataset and transforms each object into a:
+- model name
+- label
+- a $32\times 32 \times 32$ voxel grid
