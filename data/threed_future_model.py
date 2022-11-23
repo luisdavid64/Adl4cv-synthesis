@@ -169,13 +169,13 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         # Either voxel matrix provided directly or computed from Mesh
         if self.voxel_matrix is None:
             #If matrix not provided directly, a model_jid must be provided
-            assert (self.model_jid != None), "Assertion Error: No model to voxelize"
+            assert (self.model_jid != None), "No model to voxelize."
             self.voxelize(skip_texture=skip_texture)
 
 
     # Voxelize with trimesh. Only works if model_path provided
     def voxelize(self, pitch_factor=32, skip_texture=False):
-        assert (self.model_jid != None), "Assertion Error: No model to voxelize"
+        assert (self.model_jid != None), "No model to voxelize."
         mesh = self.normalized_model(skip_texture=skip_texture, skip_materials=skip_texture)
         #Model pitch according to longest extent
         self.tmesh_voxelgrid = mesh.voxelized(pitch=mesh.extents.max()/pitch_factor)

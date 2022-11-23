@@ -173,7 +173,7 @@ def main(argv):
         model_info = json.load(f)
         
     # We need model data
-    assert(model_info != None)
+    assert model_info != None, "3D-Future model information needed."
 
     # Check if output directory exists and if it doesn't create it
     if not os.path.exists(args.output_directory):
