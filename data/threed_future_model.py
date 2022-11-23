@@ -171,7 +171,7 @@ class VoxelThreedFutureModel(ThreedFutureModel):
         #Model pitch according to longest extent
         self.tmesh_voxelgrid = mesh.voxelized(pitch=mesh.extents.max()/pitch_factor)
         sparse_indices = self.tmesh_voxelgrid.sparse_indices.T
-        self.voxel_matrix = reshape_voxel_grid(sparse_indices, dims=np.array([32,32,32]))
+        self.voxel_matrix = reshape_voxel_grid(sparse_indices, dims=np.array([32,32,32]), place_top=("lamp" in self.label))
         return self.tmesh_voxelgrid
 
     def get_voxel_matrix(self, skip_texture=False):
