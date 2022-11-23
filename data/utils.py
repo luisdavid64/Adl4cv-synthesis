@@ -28,7 +28,7 @@ def set_equal_plot_axes(ax):
     ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
 
 # Reshape a voxel grid to a cube
-def reshape_voxel_grid(sparse, dims, place_top=False, dtype=np.bool):
+def reshape_voxel_grid(sparse, dims, place_top=False, dtype=np.bool, cur_shape = None):
     if sparse.ndim!=2 or sparse.shape[0]!=3:
         raise ValueError('voxel_data is wrong shape; should be 3xN array.')
     if np.isscalar(dims):
@@ -39,6 +39,14 @@ def reshape_voxel_grid(sparse, dims, place_top=False, dtype=np.bool):
     # discard voxels that fall outside dims
     valid_ix = ~np.any((xyz < 0) | (xyz >= dims), 0)
     xyz = xyz[:,valid_ix]
+    # If shape specified, center model
+    if cur_shape is not None:
+        x_dim = dims[0][0]
+        x_offset = (x_dim - cur_shape[0]) // 2
+        xyz[0] = xyz[0] + x_offset
+        z_dim = dims[2][0]
+        z_offset = (z_dim - cur_shape[2]) // 2
+        xyz[2] = xyz[2] + z_offset
     if place_top:
         # Take desired y dimension
         y_dim = dims[1][0]
