@@ -116,7 +116,7 @@ def pickle_threed_future_dataset(data):
     print("Parsing dataset ", end="")
     for i in range(len(data)):
         model = data[i]
-        matrix = model.get_voxel_obj_matrix(skip_texture=True)
+        matrix = model.get_voxel_matrix(skip_texture=True)
         objects.append({
             "model_name" : model.model_jid,
             "label" : model.label,
