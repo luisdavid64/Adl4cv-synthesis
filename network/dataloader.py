@@ -4,7 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 import pickle
 
 class VoxelFutureDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = "./tmp/threed_future.pkl", batch_size: int = 128, num_workers:int = 8):
+    def __init__(self, data_dir: str = "/tmp/threed_future.pkl", batch_size: int = 128, num_workers:int = 8):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
