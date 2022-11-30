@@ -46,7 +46,7 @@ class Autoencoder(pl.LightningModule):
         super().__init__()
         self.encoder = Encoder()
         self.decoder = Decoder()
-        self.hparams = hparams
+        self.save_hyperparameters(hparams)
 
     def forward(self, x):
         reconstruction = self.decoder(self.encoder(x))
@@ -62,21 +62,21 @@ class Autoencoder(pl.LightningModule):
         if batch_idx == 0:
             self.save_images(x, x_hat, "train_input_output")
 
-        logs = {"loss": loss}
-        return {"loss": loss, "log": logs}
+        self.log("train_loss", loss)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         x = batch
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.binary_cross_entropy(x_hat, x)
-        logs = {"val_loss": loss}
-        return {"val_loss": loss, "log": logs}
+        self.log("val_loss", loss)
+        return loss
 
     def validation_epoch_end(self, outputs):
-        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
-        logs = {"avg_val_loss": avg_loss}
-        return {"avg_val_loss": avg_loss, "log": logs}
+        avg_loss = torch.stack(outputs).mean()
+        self.log("avg_val_loss", avg_loss)
+        return avg_loss
 
     def test_step(self, batch, batch_idx):
         x = batch
@@ -85,30 +85,53 @@ class Autoencoder(pl.LightningModule):
         loss = F.binary_cross_entropy(x_hat, x)
 
         # save input and output images at beginning of epoch
+        print(batch_idx)
         if batch_idx == 0:
             self.save_images(x, x_hat, "test_input_output")
-
-        logs = {"test_loss": loss}
-        return {"test_loss": loss, "log": logs}
+        self.log("test_loss", loss)
+        return loss
 
     def test_epoch_end(self, outputs):
-        avg_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
-        logs = {"avg_test_loss": avg_loss}
-        return {"avg_test_loss": avg_loss, "log": logs}
+        avg_loss = torch.stack(outputs).mean()
+        self.log("avg_test_loss", avg_loss)
+        return avg_loss
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.lr, betas=(self.hparams.beta1, self.hparams.beta2))
 
-    def save_images(self, x, output, name, n=16):
+    # def show_voxel_plot(self, tensor1, tensor2, name):
+    #     fig = plt.figure()
+    #     # Plot input
+    #     ax = fig.add_subplot(1, 2, 1, projection='3d')
+    #     # Rotate axis so y points up
+    #     ax.view_init(azim=-60, elev=120)
+    #     ax.voxels(tensor1)
+    #     # Plot reconstruction
+    #     ax = fig.add_subplot(1, 2, 2, projection='3d')
+    #     # Rotate axis so y points up
+    #     ax.view_init(azim=-60, elev=120)
+    #     ax.voxels(tensor2)
+    #     self.logger.experiment.add_figure(name , fig)
+
+    def save_images(self, x, output, name, n=4):
         """
         Saves a plot of n images from input and output batch
         """
 
         if self.hparams.batch_size < n:
             raise IndexError("You are trying to plot more images than your batch contains!")
-        grid_top = vutils.make_grid(x, nrow=n)
-        grid_bottom = vutils.make_grid(output, nrow=n)
-        grid = torch.cat((grid_top, grid_bottom), 1)
-        self.logger.experiment.add_image(name, grid)
-
+        # self.show_voxel_plot(x[0][0], output[0][0], name)
+        fig = plt.figure()
+        # Plot input images
+        for i in range(n):
+            ax = fig.add_subplot(2, n, i + 1, projection='3d')
+            ax.view_init(azim=-60, elev=120)
+            ax.voxels(x[i][0])
+            
+        # Plot reconstruction images
+        for i in range(n):
+            ax = fig.add_subplot(2, n, n + i + 1, projection='3d')
+            ax.view_init(azim=-60, elev=120)
+            ax.voxels(output[i][0])
+        self.logger.experiment.add_figure(name , fig)
 
