@@ -104,7 +104,6 @@ class Autoencoder(pl.LightningModule):
 
         if self.hparams.batch_size < n:
             raise IndexError("You are trying to plot more images than your batch contains!")
-        # self.show_voxel_plot(x[0][0], output[0][0], name)
         fig = plt.figure()
         fig.suptitle('Voxel reconstruction')
         # Plot input images
