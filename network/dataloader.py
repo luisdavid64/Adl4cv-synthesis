@@ -11,12 +11,15 @@ class VoxelFutureDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.overfit = overfit
 
+    def filter_dataset(self, data, filter_label="desk"):
+            return filter(lambda x: x["label"] == filter_label,data)
+
     def setup(self, stage: str):
         with open(self.data_dir, "rb") as f:
             dataset = pickle.load(f)
             print(len(dataset))
             print(type(dataset))
-            dataset = list(map(lambda x: torch.from_numpy(x["matrix"]).float().unsqueeze(0), dataset))
+            dataset = list(map(lambda x: torch.from_numpy(x["matrix"]).float().unsqueeze(0), self.filter_dataset(dataset)))
             # Overfit to a certain number of samples for testing
             if self.overfit != None:
                 dataset = dataset[0:self.overfit]

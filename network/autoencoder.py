@@ -45,6 +45,7 @@ class Autoencoder(pl.LightningModule):
         self.encoder = Encoder()
         self.decoder = Decoder()
         self.save_hyperparameters(hparams)
+        self.step = 0
 
     def forward(self, x):
         reconstruction = self.decoder(self.encoder(x))
@@ -57,6 +58,7 @@ class Autoencoder(pl.LightningModule):
         loss = F.binary_cross_entropy(x_hat, x)
 
         # # save input and output images at beginning of epoch
+        self.step = self.step + 1
         if batch_idx == 0:
             self.save_images(x, x_hat, "train_input_output")
 
@@ -105,7 +107,7 @@ class Autoencoder(pl.LightningModule):
         if self.hparams.batch_size < n:
             raise IndexError("You are trying to plot more images than your batch contains!")
         fig = plt.figure()
-        fig.suptitle('Voxel reconstruction')
+        fig.suptitle('Voxel reconstruction ' + str(self.step))
         # Plot input images
         for i in range(n):
             ax = fig.add_subplot(2, n, i + 1, projection='3d')
