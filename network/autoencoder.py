@@ -3,8 +3,6 @@ import torch
 from torch import nn 
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from mpl_toolkits.mplot3d import Axes3D
-import torchvision.utils as vutils
 
 input = (1,32,32,32)
 class Encoder(nn.Module):
@@ -99,20 +97,6 @@ class Autoencoder(pl.LightningModule):
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.lr, betas=(self.hparams.beta1, self.hparams.beta2))
 
-    # def show_voxel_plot(self, tensor1, tensor2, name):
-    #     fig = plt.figure()
-    #     # Plot input
-    #     ax = fig.add_subplot(1, 2, 1, projection='3d')
-    #     # Rotate axis so y points up
-    #     ax.view_init(azim=-60, elev=120)
-    #     ax.voxels(tensor1)
-    #     # Plot reconstruction
-    #     ax = fig.add_subplot(1, 2, 2, projection='3d')
-    #     # Rotate axis so y points up
-    #     ax.view_init(azim=-60, elev=120)
-    #     ax.voxels(tensor2)
-    #     self.logger.experiment.add_figure(name , fig)
-
     def save_images(self, x, output, name, n=4):
         """
         Saves a plot of n images from input and output batch
@@ -122,6 +106,7 @@ class Autoencoder(pl.LightningModule):
             raise IndexError("You are trying to plot more images than your batch contains!")
         # self.show_voxel_plot(x[0][0], output[0][0], name)
         fig = plt.figure()
+        fig.suptitle('Voxel reconstruction')
         # Plot input images
         for i in range(n):
             ax = fig.add_subplot(2, n, i + 1, projection='3d')
