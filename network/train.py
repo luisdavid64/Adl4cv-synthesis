@@ -17,11 +17,11 @@ def main(hparams):
     # print detailed summary with estimated network size
     summary(autoencoder, (hparams.batch_size, 1, hparams.in_size, hparams.in_size, hparams.in_size), device="cpu")
 
-    trainer = pl.Trainer(logger=logger, gpus=hparams.gpus, max_epochs=hparams.max_epochs, flush_logs_every_n_steps =  1)
+    trainer = pl.Trainer(logger=logger, gpus=hparams.gpus, max_epochs=hparams.max_epochs)
     trainer.fit(model=autoencoder, datamodule=data_module)
     if not os.path.exists("output"):
         os.makedirs("output")
-    torch.save(autoencoder,"./output/autoencoder.pt")
+    torch.save(autoencoder.state_dict(),"./output/autoencoder.pt")
 
 if __name__ == "__main__":
     parser = ArgumentParser()
