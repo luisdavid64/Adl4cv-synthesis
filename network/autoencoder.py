@@ -58,8 +58,8 @@ class Autoencoder(pl.LightningModule):
         loss = F.binary_cross_entropy(x_hat, x)
 
         # # save input and output images at beginning of epoch
-        # if batch_idx == 0:
-        #     self.save_images(x, x_hat, "train_input_output")
+        if batch_idx == 0:
+            self.save_images(x, x_hat, "train_input_output")
         self.step = self.step + 1
 
         self.log("loss", loss)
@@ -117,6 +117,7 @@ class Autoencoder(pl.LightningModule):
         for i in range(n):
             ax = fig.add_subplot(2, n, n + i + 1, projection='3d')
             ax.view_init(azim=-60, elev=120)
-            ax.voxels(output[i][0])
+            # Round to nearest integer representation
+            ax.voxels(torch.round(output[i][0]))
         self.logger.experiment.add_figure(name , fig)
 
