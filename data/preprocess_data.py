@@ -108,8 +108,8 @@ def pickle_threed_future_dataset_parallel(data):
                 object = future.result()
                 objects.append(object)
 
-    pickle.dump(objects, open("./tmp/threed_future.pkl", "wb"))
-    print("Data saved at: ./tmp/threed_future.pkl")
+    pickle.dump(objects, open("/tmp/threed_future.pkl", "wb"))
+    print("Data saved at: /tmp/threed_future.pkl")
 
 def pickle_threed_future_dataset(data):
     objects = []
@@ -125,8 +125,8 @@ def pickle_threed_future_dataset(data):
         s = "{:5d} / {:5d}".format(i, len(data))
         print(s, flush=True, end="\b"*len(s))
     print()
-    pickle.dump(objects, open("./tmp/threed_future.pkl", "wb"))
-    print("Data saved at: ./tmp/threed_future.pkl")
+    pickle.dump(objects, open("/tmp/threed_future.pkl", "wb"))
+    print("Data saved at: /tmp/threed_future.pkl")
 
 def pickle_dataset(data, parallelize=False):
     if parallelize:
