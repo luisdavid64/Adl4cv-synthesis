@@ -5,16 +5,31 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 
 input = (1,32,32,32)
+
+class View(nn.Module):
+    def __init__(self, shape):
+        super(View, self).__init__()
+        self.shape = shape
+
+    def forward(self, x):
+        return x.view(*self.shape)
+
 class Encoder(nn.Module):
-    def __init__(self):
+    def __init__(self, hparams):
         super().__init__()
         self.encoder = nn.Sequential(
-          nn.Conv3d(1, 30, 5, padding=2),
+          nn.Conv3d(1, 32, 4, stride=2, padding=1),
+          nn.BatchNorm3d(32),
           nn.ReLU(),
-          torch.nn.MaxPool3d(2),
-          nn.Conv3d(30, 60, 5, padding=2),
+          nn.Conv3d(32, 16, 4, stride=2, padding=1),
+          nn.BatchNorm3d(16),
           nn.ReLU(),
-          torch.nn.MaxPool3d(2)
+          nn.Conv3d(16, 8, 4, stride=2, padding=1),
+          nn.BatchNorm3d(8),
+          nn.ReLU(),
+          nn.Flatten(start_dim=1),
+          nn.Linear(in_features=512, out_features=hparams.z_dim),
+          nn.ReLU()
         )
 
     def forward(self, x):
@@ -22,17 +37,21 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self):
+    def __init__(self, hparams):
         super().__init__()
+        # Input needs to be reshaped
         self.decoder = nn.Sequential(
-          nn.Conv3d(60, 60, 5, padding=2),
+          nn.Linear(in_features=hparams.z_dim, out_features=512),
+          View((-1,8,4,4,4)),
+          nn.ConvTranspose3d(8, 16, 4, stride=2, padding=1),
+          nn.BatchNorm3d(16),
           nn.ReLU(),
-          nn.Upsample(scale_factor=2),
-          nn.Conv3d(60, 30, 5, padding=2),
+          nn.ConvTranspose3d(16, 32, 4, stride=2, padding=1),
+          nn.BatchNorm3d(32),
           nn.ReLU(),
-          nn.Upsample(scale_factor=2),
-          nn.Conv3d(30, 1, 5, padding=2),
-          nn.Sigmoid()
+          nn.ConvTranspose3d(32, 1, 4, stride=2, padding=1),
+          nn.BatchNorm3d(1),
+          nn.Sigmoid(),
         )
 
     def forward(self, x):
@@ -42,19 +61,19 @@ class Decoder(nn.Module):
 class Autoencoder(pl.LightningModule):
     def __init__(self, hparams=None):
         super().__init__()
-        self.encoder = Encoder()
-        self.decoder = Decoder()
+        self.encoder = Encoder(hparams)
+        self.decoder = Decoder(hparams)
         self.save_hyperparameters(hparams)
         self.step = 0
 
     def forward(self, x):
-        reconstruction = self.decoder(self.encoder(x))
+        z = self.encoder(x)
+        reconstruction = self.decoder(z)
         return reconstruction
 
     def training_step(self, batch, batch_idx):
         x = batch
-        z = self.encoder(x)
-        x_hat = self.decoder(z)
+        x_hat = self.forward(x)
         loss = F.binary_cross_entropy(x_hat, x)
 
         # # save input and output images at beginning of epoch
@@ -67,8 +86,7 @@ class Autoencoder(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x = batch
-        z = self.encoder(x)
-        x_hat = self.decoder(z)
+        x_hat = self.forward(x)
         loss = F.binary_cross_entropy(x_hat, x)
         self.log("val_loss", loss)
         return loss
@@ -80,8 +98,7 @@ class Autoencoder(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         x = batch
-        z = self.encoder(x)
-        x_hat = self.decoder(z)
+        x_hat = self.forward(x)
         loss = F.binary_cross_entropy(x_hat, x)
 
         # save input and output images at beginning of epoch
