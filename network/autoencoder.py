@@ -59,12 +59,13 @@ class Decoder(nn.Module):
   
 
 class Autoencoder(pl.LightningModule):
-    def __init__(self, hparams=None):
+    def __init__(self, hparams=None, save_images=False):
         super().__init__()
         self.encoder = Encoder(hparams)
         self.decoder = Decoder(hparams)
         self.save_hyperparameters(hparams)
         self.step = 0
+        self.save_images = save_images
 
     def forward(self, x):
         z = self.encoder(x)
@@ -77,7 +78,7 @@ class Autoencoder(pl.LightningModule):
         loss = F.binary_cross_entropy(x_hat, x)
 
         # # save input and output images at beginning of epoch
-        if batch_idx == 0:
+        if self.save_images and batch_idx == 0:
             self.save_images(x, x_hat, "train_input_output")
         self.step = self.step + 1
 
