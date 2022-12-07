@@ -17,12 +17,28 @@ class View(nn.Module):
 
 # GAE loss function
 # class GeneralizedLoss(nn.Module):
-#     def __init__(self, weight=None, size_average=True):
+#     def __init__(self, weight=None, size_average=True, batch_size=16):
 #         super(nn.MSELoss, self).__init__()
+#         self.batch_size = batch_size
+
+#     def chamfer_distance(self, inputs : torch.Tensor, targets : torch.Tensor):
+#         inputs = inputs.to_sparse()
+#         targets = targets.to_sparse()
+#         return chamfer_dist(inputs,targets)
 
 #     def forward(self, inputs, targets, smooth=1):
 #         loss = 0
-#         loss += F.mse_loss(input, targets)
+#         loss += F.mse_loss(inputs, targets)
+#         dist1, dist2, idx1, idx2 = chamfer_dist(inputs,targets)
+#         for i in range(self.batch_size):
+#             pass
+#             # curr_idx = indices[i]
+#             # sort_idx = tf.gather(sort_distance_idx, curr_idx)
+#             # data_true = tf.gather(data_train, sort_idx[0, 0])
+#             # for j in range(10):
+#             #     curr_data_train = tf.gather(data_train, sort_idx[0, j])
+#             #     s = tf.math.exp(-(tf.norm(data_true - curr_data_train) ** 2) / 200)
+#             #     loss += s * mean_squared_error(curr_data_train, y_pred[i, :]) 
 #         return loss
 
 class Encoder(nn.Module):
