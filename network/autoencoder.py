@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 
 input = (1,32,32,32)
 
+# Custom reshape layer
 class View(nn.Module):
     def __init__(self, shape):
         super(View, self).__init__()
@@ -13,6 +14,16 @@ class View(nn.Module):
 
     def forward(self, x):
         return x.view(*self.shape)
+
+# GAE loss function
+# class GeneralizedLoss(nn.Module):
+#     def __init__(self, weight=None, size_average=True):
+#         super(nn.MSELoss, self).__init__()
+
+#     def forward(self, inputs, targets, smooth=1):
+#         loss = 0
+#         loss += F.mse_loss(input, targets)
+#         return loss
 
 class Encoder(nn.Module):
     def __init__(self, hparams):
@@ -59,13 +70,13 @@ class Decoder(nn.Module):
   
 
 class Autoencoder(pl.LightningModule):
-    def __init__(self, hparams=None, save_images=False):
+    def __init__(self, hparams=None, log_images=False):
         super().__init__()
         self.encoder = Encoder(hparams)
         self.decoder = Decoder(hparams)
         self.save_hyperparameters(hparams)
         self.step = 0
-        self.save_images = save_images
+        self.log_images = log_images
 
     def forward(self, x):
         z = self.encoder(x)
@@ -75,10 +86,10 @@ class Autoencoder(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x = batch
         x_hat = self.forward(x)
-        loss = F.binary_cross_entropy(x_hat, x)
+        loss = F.mse_loss(x_hat, x)
 
         # # save input and output images at beginning of epoch
-        if self.save_images and batch_idx == 0:
+        if self.log_images and batch_idx == 0:
             self.save_images(x, x_hat, "train_input_output")
         self.step = self.step + 1
 
@@ -88,7 +99,7 @@ class Autoencoder(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x = batch
         x_hat = self.forward(x)
-        loss = F.binary_cross_entropy(x_hat, x)
+        loss = F.mse_loss(x_hat, x)
         self.log("val_loss", loss)
         return loss
 
@@ -100,7 +111,7 @@ class Autoencoder(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x = batch
         x_hat = self.forward(x)
-        loss = F.binary_cross_entropy(x_hat, x)
+        loss = F.mse_loss(x_hat, x)
 
         # save input and output images at beginning of epoch
         if batch_idx == 0:

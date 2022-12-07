@@ -12,7 +12,7 @@ def main(hparams):
     logger = pl.loggers.TensorBoardLogger(hparams.log_dir, name=f"bs{hparams.batch_size}")
 
     autoencoder = Autoencoder(hparams)
-    data_module = VoxelFutureDataModule(data_dir=hparams.data_root, num_workers=hparams.num_workers, overfit=20)
+    data_module = VoxelFutureDataModule(data_dir=hparams.data_root, num_workers=hparams.num_workers)
 
     # print detailed summary with estimated network size
     summary(autoencoder, (hparams.batch_size, 1, hparams.in_size, hparams.in_size, hparams.in_size), device="cpu")
