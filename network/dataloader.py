@@ -19,7 +19,7 @@ class VoxelFutureDataModule(pl.LightningDataModule):
             dataset = pickle.load(f)
             print(len(dataset))
             print(type(dataset))
-            dataset = list(map(lambda x: torch.from_numpy(x["matrix"]).float().unsqueeze(0), self.filter_dataset(dataset)))
+            dataset = list(map(lambda x: torch.from_numpy(x["matrix"]).float().unsqueeze(0), dataset))
             # Overfit to a certain number of samples for testing
             if self.overfit != None:
                 dataset = dataset[0:self.overfit]
