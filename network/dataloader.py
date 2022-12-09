@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 import pickle
 
 class VoxelFutureDataModule(pl.LightningDataModule):
@@ -10,9 +10,6 @@ class VoxelFutureDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.overfit = overfit
-
-    def filter_dataset(self, data, filter_label="desk"):
-            return filter(lambda x: x["label"] == filter_label,data)
 
     def setup(self, stage: str):
         with open(self.data_dir, "rb") as f:
