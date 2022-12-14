@@ -13,8 +13,8 @@ conda env create -f environment.yml
 conda activate project
 ```
 
-To set up ATISS, follow the instructions in the readme of 
-The structure of the `datasets` folder should be like this:
+To set up ATISS, follow the instructions in the readme belonging to it.
+The structure of the `datasets` folder (directly below ATISS/) should be as follows:
  - datasets
    - 3D-Front/ -> /home/usr/Documents/Data/3D-FRONT/
    - 3D-Future/ -> /home/usr/Documents/Data/3D-FRONT/3D-FUTURE-model/
