@@ -55,7 +55,7 @@ class Encoder(nn.Module):
           nn.BatchNorm3d(8),
           nn.ReLU(),
           nn.Flatten(start_dim=1),
-          nn.Linear(in_features=512, out_features=hparams.z_dim),
+          nn.Linear(in_features=512, out_features=hparams["z_dim"]),
           nn.ReLU()
         )
 
@@ -68,7 +68,7 @@ class Decoder(nn.Module):
         super().__init__()
         # Input needs to be reshaped
         self.decoder = nn.Sequential(
-          nn.Linear(in_features=hparams.z_dim, out_features=512),
+          nn.Linear(in_features=hparams["z_dim"], out_features=512),
           View((-1,8,4,4,4)),
           nn.ConvTranspose3d(8, 16, 4, stride=2, padding=1),
           nn.BatchNorm3d(16),
@@ -109,7 +109,7 @@ class Autoencoder(pl.LightningModule):
             self.save_images(x, x_hat, "train_input_output")
         self.step = self.step + 1
 
-        self.log("loss", loss)
+        self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -141,14 +141,14 @@ class Autoencoder(pl.LightningModule):
         return avg_loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.hparams.lr, betas=(self.hparams.beta1, self.hparams.beta2))
+        return torch.optim.Adam(self.parameters(), lr=self.hparams["lr"], betas=(self.hparams["beta1"], self.hparams["beta2"]))
 
     def save_images(self, x, output, name, n=4):
         """
         Saves a plot of n images from input and output batch
         """
 
-        if self.hparams.batch_size < n:
+        if self.hparams["batch_size"] < n:
             raise IndexError("You are trying to plot more images than your batch contains!")
         fig = plt.figure()
         fig.suptitle('Voxel reconstruction ' + str(self.step))

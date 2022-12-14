@@ -9,15 +9,18 @@ from torchinfo import summary
 
 def main(hparams):
     print("Cuda available: ", torch.cuda.is_available())
-    logger = pl.loggers.TensorBoardLogger(hparams.log_dir, name=f"bs{hparams.batch_size}")
-
+    bs = hparams["batch_size"]
+    lr = hparams["lr"]
+    logger = pl.loggers.TensorBoardLogger(hparams["log_dir"], name=f"bs{bs}_lr{lr}", default_hp_metric=False)
+    logger.log_hyperparams(hparams, {"hp/train_loss": 1, "hp/val_loss": 1, "hp/avg_val_loss": 1})
     autoencoder = Autoencoder(hparams)
-    data_module = VoxelFutureDataModule(data_dir=hparams.data_root, num_workers=hparams.num_workers)
+    data_module = VoxelFutureDataModule(data_dir=hparams["data_root"], num_workers=hparams["num_workers"], batch_size=hparams["batch_size"])
 
     # print detailed summary with estimated network size
-    summary(autoencoder, (hparams.batch_size, 1, hparams.in_size, hparams.in_size, hparams.in_size), device="cpu")
+    summary(autoencoder, (hparams["batch_size"], 1, hparams["in_size"], hparams["in_size"], hparams["in_size"]))
+    # summary(autoencoder, (hparams["batch_size"], 1, hparams["in_size"], hparams["in_size"], hparams["in_size"]), device="cpu")
 
-    trainer = pl.Trainer(logger=logger, gpus=hparams.gpus, max_epochs=hparams.max_epochs)
+    trainer = pl.Trainer(log_every_n_steps=10,logger=logger, gpus=hparams["gpus"], max_epochs=hparams["max_epochs"])
     trainer.fit(model=autoencoder, datamodule=data_module)
     if not os.path.exists("output"):
         os.makedirs("output")
