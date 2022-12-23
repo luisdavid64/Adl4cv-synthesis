@@ -126,6 +126,8 @@ dependencies:
   - tornado=6.1
   - tqdm=4.62.3
   - trimesh=3.9.39
+  - conda-forge::pyglet=1.5.27
+  - conda-forge::scikit-image=0.19.3
   - typing_extensions=3.10.0.2
   - urllib3=1.26.7
   - wheel=0.37.0
