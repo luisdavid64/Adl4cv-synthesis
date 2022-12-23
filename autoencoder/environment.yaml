@@ -1,4 +1,4 @@
-name: project
+name: projectx
 channels:
   - conda-forge
   - pytorch
@@ -10,7 +10,8 @@ dependencies:
   - pyrr=0.10.3
   - pyyaml=5.3.1
   - python=3.8
-  - pytorch=1.6.0
+  - pytorch::pytorch=1.6.0
+  - conda-forge::pytorch-lightning=1.5.10
   - torchvision=0.7.0
   - pillow=7.2.0
   - scipy=1.5.2
@@ -18,7 +19,8 @@ dependencies:
   - trimesh=3.8.10
   - matplotlib=3.3.1
   - wxpython=4.0.7
-  - pip
+  - pip=22.3.1
+  - pyglet==1.5.11
   - pip:
     - simple_3dviz==0.4.0
     - pytorch-fast-transformers==0.4.0

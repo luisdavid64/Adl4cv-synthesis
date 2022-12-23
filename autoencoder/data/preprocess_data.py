@@ -158,7 +158,7 @@ def main(argv):
     )
     parser.add_argument(
         "output_directory",
-        default="/tmp/future_voxels",
+        default="./tmp/future_voxels",
         help="Path to output directory"
     )
     parser.add_argument(

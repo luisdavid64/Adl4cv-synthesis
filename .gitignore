@@ -1,6 +1,10 @@
+#Outputs
+autoencoder/output/
+autoencoder/logs/
 # Editors
 .vscode/
 .idea/
+autoencoder/lightning_logs/
 
 # Vagrant
 .vagrant/
@@ -21,6 +25,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+tmp/
 .Python
 build/
 develop-eggs/
@@ -123,3 +128,8 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+output/
+datasets/
+ATISS/outputs
+ATISS/scripts/*.sh

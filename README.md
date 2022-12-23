@@ -9,9 +9,21 @@ The simplest way to make sure that you have all dependencies in place is to use
 [conda](https://docs.conda.io/projects/conda/en/4.6.1/index.html). You can
 create a conda environment called ```project``` using
 ```
-conda env create -f environment.yaml
+conda env create -f environment.yml
 conda activate project
 ```
+
+To set up ATISS, follow the instructions in the readme belonging to it.
+The structure of the `datasets` folder (directly below ATISS/) should be as follows:
+ - datasets
+   - 3D-Front/ -> /home/usr/Documents/Data/3D-FRONT/
+   - 3D-Future/ -> /home/usr/Documents/Data/3D-FRONT/3D-FUTURE-model/
+   - process_outputs/
+   - threed_future_model_bedroom.pkl
+   - threed_future_model_livingroom.pkl
+
+where 3D-Front/3D-Future are symbolic links.
+
 ## Dataset
 The project is based on the 
 [3D-FUTURE](https://www.google.com/search?q=3d-future&oq=3d-fut&aqs=chrome.1.69i57j0j0i30l8.3909j0j7&sourceid=chrome&ie=UTF-8)
