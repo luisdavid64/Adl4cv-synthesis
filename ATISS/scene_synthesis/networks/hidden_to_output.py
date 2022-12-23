@@ -226,6 +226,13 @@ class AutoregressiveDMLL(Hidden2Output):
         s_z = sample_from_dmll(sizes_z.reshape(B*L, -1))
         return torch.cat([s_x, s_y, s_z], dim=-1).view(B, L, 3)
 
+    def sample_shape_codes(self, x, class_labels, sizes):
+        B, L, _ = class_labels.shape
+
+        c = self.fc_class_labels(class_labels)
+        cf = torch.cat([x, c], dim=-1)
+        return self.shape_layer(cf)
+
     def pred_class_probs(self, x):
         class_labels = self.class_layer(x)
 

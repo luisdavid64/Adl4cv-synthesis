@@ -211,20 +211,27 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
             F, class_labels, translations, angles
         )
 
+        shape_codes = self.hidden2output.sample_shape_codes(
+            F, class_labels, sizes
+        )
+
         return {
             "class_labels": class_labels,
             "translations": translations,
             "sizes": sizes,
-            "angles": angles
+            "angles": angles,
+            "shape_codes": shape_codes
         }
 
     @torch.no_grad()
     def generate_boxes(self, room_mask, max_boxes=32, device="cpu"):
         boxes = self.start_symbol(device)
+        boxes["shape_codes"] = torch.zeros((1,1,128)).to(device)
         for i in range(max_boxes):
             box = self.autoregressive_decode(boxes, room_mask=room_mask)
-
+            print(boxes)
             for k in box.keys():
+                print(k, boxes[k].shape,box[k].shape)
                 boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
 
             # Check if we have the end symbol
