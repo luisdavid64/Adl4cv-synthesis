@@ -100,7 +100,8 @@ def build_network(
     if weight_file is not None:
         print("Loading weight file from {}".format(weight_file))
         network.load_state_dict(
-            torch.load(weight_file, map_location=device)
+            torch.load(weight_file, map_location=device),
+            strict=False
         )
     network.to(device)
     return network, train_on_batch, validate_on_batch

@@ -13,11 +13,12 @@ from ..stats_logger import StatsLogger
 
 
 class BBoxOutput(object):
-    def __init__(self, sizes, translations, angles, class_labels):
+    def __init__(self, sizes, translations, angles, class_labels, shape_codes):
         self.sizes = sizes
         self.translations = translations
         self.angles = angles
         self.class_labels = class_labels
+        self.shape_codes = shape_codes
 
     def __len__(self):
         return len(self.members)
@@ -62,12 +63,13 @@ class BBoxOutput(object):
 
 
 class AutoregressiveBBoxOutput(BBoxOutput):
-    def __init__(self, sizes, translations, angles, class_labels):
+    def __init__(self, sizes, translations, angles, class_labels, shape_codes):
         self.sizes_x, self.sizes_y, self.sizes_z = sizes
         self.translations_x, self.translations_y, self.translations_z = \
             translations
         self.class_labels = class_labels
         self.angles = angles
+        self.shape_codes = shape_codes
 
     @property
     def members(self):
@@ -117,23 +119,28 @@ class AutoregressiveBBoxOutput(BBoxOutput):
         size_loss += dmll(self.sizes_y, target["sizes_y"])
         size_loss += dmll(self.sizes_z, target["sizes_z"])
         angle_loss = dmll(self.angles, target["angles"])
-
-        return label_loss, translation_loss, size_loss, angle_loss
+        # print(angle_loss.device, self.angles.device,target["angles"].device)
+        test = torch.zeros((128,1,128)).to(angle_loss.device)
+        # print(dict.keys(X_target))
+        # print(self.shape_codes.device, test.device)
+        shape_loss = cross_entropy_loss(self.shape_codes, X_target["shape_codes"])
+        
+        return label_loss, translation_loss, size_loss, angle_loss, shape_loss
 
     def reconstruction_loss(self, X_target, lengths):
         # Compute the losses
-        label_loss, translation_loss, size_loss, angle_loss = \
+        label_loss, translation_loss, size_loss, angle_loss, shape_loss = \
             self.get_losses(X_target)
 
         label_loss = label_loss.mean()
         translation_loss = translation_loss.mean()
         size_loss = size_loss.mean()
         angle_loss = angle_loss.mean()
-
+        shape_loss = shape_loss.mean()
         StatsLogger.instance()["losses.size"].value = size_loss.item()
         StatsLogger.instance()["losses.translation"].value = \
             translation_loss.item()
         StatsLogger.instance()["losses.angle"].value = angle_loss.item()
         StatsLogger.instance()["losses.label"].value = label_loss.item()
-
-        return label_loss + translation_loss + size_loss + angle_loss
+        print(label_loss, translation_loss, size_loss, angle_loss, shape_loss)
+        return label_loss + translation_loss + size_loss + angle_loss + shape_loss
