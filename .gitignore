@@ -128,3 +128,7 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+output/
+datasets/
+ATISS/outputs
