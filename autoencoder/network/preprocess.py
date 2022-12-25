@@ -14,15 +14,16 @@ def main(hparams):
     autoencoder.eval()
     with open(hparams["data_root"], "rb") as f:
         dataset = pickle.load(f)
-        dataset = list(map(lambda x: torch.from_numpy(x["matrix"]).float().unsqueeze(0), dataset))
+        dataset = list(map(lambda x: {'model_name' : x["model_name"], 'matrix' :torch.from_numpy(x["matrix"]).float().unsqueeze(0)}, dataset))
         print(len(dataset))
         k = random.randint(0, len(dataset) - 1)
-        mylist = []
+
+        shapes = {}
 
         for object in tqdm(dataset):
-            x = autoencoder.encoder(torch.unsqueeze(object,0))
-            mylist.append(x)
-        pickle.dump(mylist, open("../output/mytestout.pkl", "wb"))
+            x = autoencoder.encoder(torch.unsqueeze(object['matrix'],0))
+            shapes[object['model_name']] = x
+        pickle.dump(shapes, open("../../output/threed_future_encoded_shapes.pkl", "wb"))
 
 if __name__ == "__main__":
     parser = ArgumentParser()
