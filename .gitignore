@@ -133,3 +133,4 @@ output/
 datasets/
 ATISS/outputs
 ATISS/scripts/*.sh
+autoencoder/network/out/*

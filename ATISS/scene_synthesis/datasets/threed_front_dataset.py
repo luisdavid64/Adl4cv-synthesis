@@ -205,10 +205,12 @@ class DatasetCollection(DatasetDecoratorBase):
     @staticmethod
     def collate_fn(samples):
         # We assume that all samples have the same set of keys
-        key_set = set(samples[0].keys()) - set(["length"])
+        key_set = set(samples[0].keys()) - set(["length", "shape_codes"])
 
         # Compute the max length of the sequences in the batch
         max_length = max(sample["length"] for sample in samples)
+
+        shape_codes_length = samples[0]["shape_codes"][0].shape[1]
 
         # Assume that all inputs that are 3D or 1D do not need padding.
         # Otherwise, pad the first dimension.
@@ -218,7 +220,6 @@ class DatasetCollection(DatasetDecoratorBase):
             k: np.stack([sample[k] for sample in samples], axis=0)
             for k in (key_set-padding_keys)
         })
-
         sample_params.update({
             k: np.stack([
                 np.vstack([
@@ -232,6 +233,7 @@ class DatasetCollection(DatasetDecoratorBase):
             sample["length"] for sample in samples
         ])
 
+
         # Make torch tensors from the numpy tensors
         torch_sample = {
             k: torch.from_numpy(sample_params[k]).float()
@@ -243,6 +245,15 @@ class DatasetCollection(DatasetDecoratorBase):
             for k in torch_sample.keys()
             if "_tr" in k
         })
+
+        # Add tensors from shape_codes data
+        torch_sample["shape_codes"] = torch.stack([
+            torch.cat(
+                sample["shape_codes"] +
+                [torch.zeros((max_length-len(sample["shape_codes"]),  shape_codes_length))]
+            )
+            for sample in samples
+        ])
 
         return torch_sample
 
@@ -415,7 +426,7 @@ class Autoregressive(DatasetDecoratorBase):
         sample_params_target = {}
         # Compute the target from the input
         for k, v in sample_params.items():
-            if k == "room_layout" or k == "length":
+            if k == "room_layout" or k == "length" or k == "shape_codes":
                 pass
             elif k == "class_labels":
                 class_labels = np.copy(v)
