@@ -42,14 +42,16 @@ class BBoxOutput(object):
             translations = t["translations_tr"]
             sizes = t["sizes_tr"]
             angles = t["angles_tr"]
+            shape_codes = t["shape_codes_tr"]
         else:
             assert len(t.shape) == 3
             class_labels = t[:, :, :-7]
             translations = t[:, :, -7:-4]
             sizes = t[:, :, -4:-1]
             angles = t[:, :, -1:]
+            shape_codes = None # ??
 
-        return class_labels, translations, sizes, angles
+        return class_labels, translations, sizes, angles, shape_codes
 
     @property
     def feature_dims(self):
@@ -96,6 +98,7 @@ class AutoregressiveBBoxOutput(BBoxOutput):
         target["sizes_y"] = target_bbox_params[2][:, :, 1:2]
         target["sizes_z"] = target_bbox_params[2][:, :, 2:3]
         target["angles"] = target_bbox_params[3]
+        target["shape_codes"] = target_bbox_params[4]
 
         return target
 
@@ -119,11 +122,10 @@ class AutoregressiveBBoxOutput(BBoxOutput):
         size_loss += dmll(self.sizes_y, target["sizes_y"])
         size_loss += dmll(self.sizes_z, target["sizes_z"])
         angle_loss = dmll(self.angles, target["angles"])
-        # print(angle_loss.device, self.angles.device,target["angles"].device)
         test = torch.zeros((128,1,128)).to(angle_loss.device)
-        # print(dict.keys(X_target))
-        # print(self.shape_codes.device, test.device)
-        shape_loss = cross_entropy_loss(self.shape_codes, X_target["shape_codes"])
+        shape_loss = cross_entropy_loss(self.shape_codes, target["shape_codes"])
+        print("shape_loss\n")
+        print(shape_loss)
         
         return label_loss, translation_loss, size_loss, angle_loss, shape_loss
 

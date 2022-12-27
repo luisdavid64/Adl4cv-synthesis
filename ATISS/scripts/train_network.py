@@ -263,10 +263,7 @@ def main(argv):
         network.train()
         for b, sample in zip(range(steps_per_epoch), yield_forever(train_loader)):
             # Move everything to device
-            # print(sample["shape_codes"].shape)
             # sample["shape_codes"] = torch.zeros((sample["lengths"].shape[0],1,128))
-            # print("\n After\n")
-            # print(sample["shape_codes"].shape)
             for k, v in sample.items():
                 sample[k] = v.to(device)
             batch_loss = train_on_batch(network, optimizer, sample, config)

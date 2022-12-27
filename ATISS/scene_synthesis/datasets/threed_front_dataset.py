@@ -205,8 +205,7 @@ class DatasetCollection(DatasetDecoratorBase):
     @staticmethod
     def collate_fn(samples):
         # We assume that all samples have the same set of keys
-        key_set = set(samples[0].keys()) - set(["length", "shape_codes"])
-
+        key_set = set(samples[0].keys()) - set(["length", "shape_codes", "shape_codes_tr"])
         # Compute the max length of the sequences in the batch
         max_length = max(sample["length"] for sample in samples)
 
@@ -254,6 +253,7 @@ class DatasetCollection(DatasetDecoratorBase):
             )
             for sample in samples
         ])
+        torch_sample["shape_codes_tr"] = torch.stack([sample["shape_codes_tr"] for sample in samples])
 
         return torch_sample
 
@@ -426,8 +426,11 @@ class Autoregressive(DatasetDecoratorBase):
         sample_params_target = {}
         # Compute the target from the input
         for k, v in sample_params.items():
-            if k == "room_layout" or k == "length" or k == "shape_codes":
+            if k == "room_layout" or k == "length":
                 pass
+            elif k == "shape_codes":
+                C = sample_params[k][0].shape[1]
+                sample_params_target[k + "_tr"] = sample_params[k] + [torch.unsqueeze(torch.zeros(C), 0)]
             elif k == "class_labels":
                 class_labels = np.copy(v)
                 L, C = class_labels.shape
