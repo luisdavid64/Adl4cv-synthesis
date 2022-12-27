@@ -206,7 +206,7 @@ def main(argv):
             boxes["sizes"],
             boxes["angles"],
         ], dim=-1).cpu().numpy()
-        voxel_shapes = autoencoder.decoder(torch.squeeze(boxes["shape_codes"],dim=0))
+        voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"],dim=0))
 
         # This generates our ground truth.
         # Are we going to generate our Autoencoder ground truth or real gt?
@@ -216,25 +216,24 @@ def main(argv):
             current_scene.sizes[None],
             current_scene.angles[None]
         ], axis=-1)
+        voxel_shapes_gt = autoencoder.decoder(torch.stack(current_scene.shape_codes))
 
-        # renderables, trimesh_meshes = get_textured_objects(
-        #     bbox_params_t, objects_dataset, classes
+        # renderables, trimesh_meshes = get_textured_objects_from_voxels(
+        #     bbox_params_gt, classes, voxel_shapes_t[None]
         # )
-        renderables, trimesh_meshes = get_textured_objects_from_voxels(
-            bbox_params_t, classes, voxel_shapes
+
+        renderables_gt, trimesh_meshes_gt = get_textured_objects_from_voxels(
+            bbox_params_gt, classes, voxel_shapes_gt[None]
         )
-        renderables_gt, trimesh_meshes_gt = get_textured_objects_gt(
-            bbox_params_gt, objects_dataset, classes
-        )
-        if trimesh_meshes is not None:
-            # Create a trimesh scene and export it
-            path_to_objs = os.path.join(
-                args.output_directory, 'pred',
-                "{:03d}_scene".format(i)
-            )
-            if not os.path.exists(path_to_objs):
-                os.makedirs(path_to_objs)
-            export_scene(path_to_objs, trimesh_meshes, boxes["class_labels"][0], classes, color_palette)
+        # if trimesh_meshes is not None:
+        #     # Create a trimesh scene and export it
+        #     path_to_objs = os.path.join(
+        #         args.output_directory, 'pred',
+        #         "{:03d}_scene".format(i)
+        #     )
+        #     if not os.path.exists(path_to_objs):
+        #         os.makedirs(path_to_objs)
+        #     export_scene(path_to_objs, trimesh_meshes, boxes["class_labels"][0], classes, color_palette)
 
         if trimesh_meshes_gt is not None:
             # Create a trimesh scene and export it

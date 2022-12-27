@@ -144,26 +144,22 @@ def get_floor_plan(scene, floor_textures):
     return floor, tr_floor
     
 def marching_cubes(voxel_matrix):
-    voxel_matrix = torch.round(voxel_matrix)
-    mesh = trimesh.voxel.ops.matrix_to_marching_cubes(matrix=voxel_matrix, pitch=1/32)
+    voxel_matrix = torch.round(voxel_matrix).detach().numpy()
+    mesh = trimesh.voxel.ops.matrix_to_marching_cubes(voxel_matrix, pitch=1/32)
     mesh.split(only_watertight=True)
     return mesh
 
 def get_textured_objects_from_voxels(bbox_params_t, classes, voxel_shapes):
     renderables = []
-    lines_renderables = []
     trimesh_meshes = []
     for j in range(1, bbox_params_t.shape[1]-1):
-
         # Load the furniture and scale it as it is given in the dataset
-        raw_mesh = marching_cubes(voxel_shapes[j,-1])
-        sizes = torch.diag(bbox_params_t[0, j, -4:-1])
-        raw_mesh.apply_transform(sizes)
-        tr_mesh = raw_mesh
+        tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+        sizes = bbox_params_t[0, j, -4:-1]
 
         # Compute the centroid of the vertices in order to match the
         # bbox (because the prediction only considers bboxes)
-        centroid = raw_mesh.centroid
+        centroid = tr_mesh.centroid
 
         # Extract the predicted affine transformation to position the
         # mesh
@@ -176,14 +172,9 @@ def get_textured_objects_from_voxels(bbox_params_t, classes, voxel_shapes):
         R[2, 2] = np.cos(theta)
         R[1, 1] = 1.
 
-        # Apply the transformations in order to correctly position the mesh
-        raw_mesh.affine_transform(t=-centroid)
-        raw_mesh.affine_transform(R=R, t=translation)
-        renderables.append(raw_mesh)
-
         # Create a trimesh object for the same mesh in order to save
         # everything as a single scene
-        tr_mesh.apply_transform(sizes)
+        tr_mesh.vertices *= sizes.max()
         tr_mesh.vertices -= centroid
         tr_mesh.vertices[...] = tr_mesh.vertices.dot(R) + translation
         trimesh_meshes.append(tr_mesh)
