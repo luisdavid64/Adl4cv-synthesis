@@ -206,7 +206,7 @@ def main(argv):
             boxes["sizes"],
             boxes["angles"],
         ], dim=-1).cpu().numpy()
-        voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"],dim=0))
+        voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
 
         # This generates our ground truth.
         # Are we going to generate our Autoencoder ground truth or real gt?
