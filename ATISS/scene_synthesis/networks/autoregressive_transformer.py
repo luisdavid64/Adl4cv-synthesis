@@ -229,9 +229,9 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         boxes["shape_codes"] = torch.zeros((1,1,128)).to(device)
         for i in range(max_boxes):
             box = self.autoregressive_decode(boxes, room_mask=room_mask)
-            print(boxes)
+            # print(boxes)
             for k in box.keys():
-                print(k, boxes[k].shape,box[k].shape)
+                # print(k, boxes[k].shape,box[k].shape)
                 boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
 
             # Check if we have the end symbol
@@ -242,7 +242,8 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
             "class_labels": boxes["class_labels"].cpu(),
             "translations": boxes["translations"].cpu(),
             "sizes": boxes["sizes"].cpu(),
-            "angles": boxes["angles"].cpu()
+            "angles": boxes["angles"].cpu(),
+            "shape_codes": boxes["shape_codes"].cpu()
         }
 
     def autoregressive_decode_with_class_label(

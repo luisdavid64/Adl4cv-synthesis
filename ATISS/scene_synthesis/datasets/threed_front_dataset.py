@@ -346,7 +346,7 @@ class Scale(DatasetDecoratorBase):
         bounds = self.bounds
         sample_params = {}
         for k, v in s.items():
-            if k == "room_layout" or k == "class_labels":
+            if k == "room_layout" or k == "class_labels" or k == "shape_codes":
                 sample_params[k] = v
             else:
                 sample_params[k] = Scale.descale(
