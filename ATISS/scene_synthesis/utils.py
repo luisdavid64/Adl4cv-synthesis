@@ -78,6 +78,7 @@ def get_textured_objects_gt(bbox_params_t, objects_dataset, classes):
 
         # Load the furniture and scale it as it is given in the dataset
         raw_mesh = Mesh.from_file(furniture.raw_model_path)
+        raw_mesh.scale(furniture.scale)
 
         # Compute the centroid of the vertices in order to match the
         # bbox (because the prediction only considers bboxes)
