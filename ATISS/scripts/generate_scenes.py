@@ -27,7 +27,7 @@ from scene_synthesis.datasets import filter_function, \
     get_dataset_raw_and_encoded
 from scene_synthesis.datasets.threed_future_dataset import ThreedFutureDataset
 from scene_synthesis.networks import build_network
-from scene_synthesis.utils import get_textured_objects, get_textured_objects_gt, get_textured_objects_from_voxels
+from scene_synthesis.utils import get_textured_objects, get_textured_objects_gt, get_textured_objects_from_voxels, get_textured_objects_from_voxels_gt
 import seaborn as sns
 import trimesh
 
@@ -218,22 +218,29 @@ def main(argv):
         ], axis=-1)
         voxel_shapes_gt = autoencoder.decoder(torch.stack(current_scene.shape_codes))
 
+        # Generate meshes for predicted objects
         # renderables, trimesh_meshes = get_textured_objects_from_voxels(
-        #     bbox_params_gt, classes, voxel_shapes_t[None]
+        #     bbox_params_gt, voxel_shapes_t[None]
         # )
 
-        renderables_gt, trimesh_meshes_gt = get_textured_objects_from_voxels(
-            bbox_params_gt, classes, voxel_shapes_gt[None]
+        # Generate meshes for GT
+        renderables, trimesh_meshes = get_textured_objects_from_voxels_gt(
+            bbox_params_gt, voxel_shapes_gt[None]
         )
-        # if trimesh_meshes is not None:
-        #     # Create a trimesh scene and export it
-        #     path_to_objs = os.path.join(
-        #         args.output_directory, 'pred',
-        #         "{:03d}_scene".format(i)
-        #     )
-        #     if not os.path.exists(path_to_objs):
-        #         os.makedirs(path_to_objs)
-        #     export_scene(path_to_objs, trimesh_meshes, boxes["class_labels"][0], classes, color_palette)
+
+        # old method for comparison
+        renderables_gt, trimesh_meshes_gt = get_textured_objects_gt(
+            bbox_params_gt, objects_dataset, classes
+        )
+        if trimesh_meshes is not None:
+            # Create a trimesh scene and export it
+            path_to_objs = os.path.join(
+                args.output_directory, 'pred',
+                "{:03d}_scene".format(i)
+            )
+            if not os.path.exists(path_to_objs):
+                os.makedirs(path_to_objs)
+            export_scene(path_to_objs, trimesh_meshes, boxes["class_labels"][0], classes, color_palette)
 
         if trimesh_meshes_gt is not None:
             # Create a trimesh scene and export it

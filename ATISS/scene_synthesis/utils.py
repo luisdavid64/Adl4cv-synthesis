@@ -149,10 +149,42 @@ def marching_cubes(voxel_matrix):
     mesh.split(only_watertight=True)
     return mesh
 
-def get_textured_objects_from_voxels(bbox_params_t, classes, voxel_shapes):
+def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
     renderables = []
     trimesh_meshes = []
     for j in range(1, bbox_params_t.shape[1]-1):
+        # Load the furniture and scale it as it is given in the dataset
+        tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+        sizes = bbox_params_t[0, j, -4:-1]
+
+        # Compute the centroid of the vertices in order to match the
+        # bbox (because the prediction only considers bboxes)
+        centroid = tr_mesh.centroid
+
+        # Extract the predicted affine transformation to position the
+        # mesh
+        translation = bbox_params_t[0, j, -7:-4]
+        theta = bbox_params_t[0, j, -1]
+        R = np.zeros((3, 3))
+        R[0, 0] = np.cos(theta)
+        R[0, 2] = -np.sin(theta)
+        R[2, 0] = np.sin(theta)
+        R[2, 2] = np.cos(theta)
+        R[1, 1] = 1.
+
+        # Create a trimesh object for the same mesh in order to save
+        # everything as a single scene
+        tr_mesh.vertices *= sizes.max()
+        tr_mesh.vertices -= centroid
+        tr_mesh.vertices[...] = tr_mesh.vertices.dot(R) + translation
+        trimesh_meshes.append(tr_mesh)
+
+    return renderables, trimesh_meshes
+
+def get_textured_objects_from_voxels_gt(bbox_params_t, voxel_shapes):
+    renderables = []
+    trimesh_meshes = []
+    for j in range(0, bbox_params_t.shape[1]):
         # Load the furniture and scale it as it is given in the dataset
         tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
         sizes = bbox_params_t[0, j, -4:-1]
