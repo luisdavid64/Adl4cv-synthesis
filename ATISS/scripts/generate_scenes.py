@@ -195,7 +195,7 @@ def main(argv):
         )
         room_mask = torch.from_numpy(
             np.transpose(current_scene.room_mask[None, :, :, 0:1], (0, 3, 1, 2))
-        )
+        ).to(device)
         # room_mask = room_mask.cuda()
         room_mask = room_mask
         bbox_params = network.generate_boxes(room_mask=room_mask, device=device)
