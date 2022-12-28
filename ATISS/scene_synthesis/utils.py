@@ -157,14 +157,14 @@ def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
     renderables = []
     trimesh_meshes = []
     for j in range(1, bbox_params_t.shape[1]-1):
-        # Load the furniture and scale it as it is given in the dataset
+
+        # Convert voxels into mesh
         valid, tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+
+        # Ignore degenerate meshes
         if not valid:
             continue
         sizes = bbox_params_t[0, j, -4:-1]
-
-        # Compute the centroid of the vertices in order to match the
-        # bbox (because the prediction only considers bboxes)
 
         # Extract the predicted affine transformation to position the
         # mesh
@@ -190,14 +190,14 @@ def get_textured_objects_from_voxels_gt(bbox_params_t, voxel_shapes):
     renderables = []
     trimesh_meshes = []
     for j in range(0, bbox_params_t.shape[1]):
-        # Load the furniture and scale it as it is given in the dataset
+
+        # Convert voxels into mesh
         valid, tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+
+        # Ignore degenerate meshes
         if not valid:
             continue
         sizes = bbox_params_t[0, j, -4:-1]
-
-        # Compute the centroid of the vertices in order to match the
-        # bbox (because the prediction only considers bboxes)
 
         # Extract the predicted affine transformation to position the
         # mesh
