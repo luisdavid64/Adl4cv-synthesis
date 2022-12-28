@@ -212,7 +212,7 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         )
 
         shape_codes = self.hidden2output.sample_shape_codes(
-            F, class_labels, sizes
+            F, class_labels, translations, angles, sizes
         )
 
         return {

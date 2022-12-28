@@ -74,9 +74,12 @@ class AutoregressiveDMLL(Hidden2Output):
         # Positional embedding for the target angle
         self.pe_angle_z = FixedPositionalEncoding(proj_dims=64)
 
+        # Positional embedding for the target size
+        self.pe_size_x = FixedPositionalEncoding(proj_dims=64)
+        self.pe_size_y = FixedPositionalEncoding(proj_dims=64)
+        self.pe_size_z = FixedPositionalEncoding(proj_dims=64)
+
         c_hidden_size = hidden_size + 64
-        shape_hidden_size = c_hidden_size# + 64*3
-        self.shape_layer = AutoregressiveDMLL._mlp(shape_hidden_size, 128)
         
         self.centroid_layer_x = AutoregressiveDMLL._mlp(
             c_hidden_size, n_mixtures[0]*3
@@ -101,6 +104,9 @@ class AutoregressiveDMLL(Hidden2Output):
         self.size_layer_z = AutoregressiveDMLL._mlp(
             c_hidden_size, n_mixtures[5]*3
         )
+
+        c_hidden_size = c_hidden_size + 64*3
+        self.shape_layer = AutoregressiveDMLL._mlp(c_hidden_size, 128)
 
         self.bbox_output = bbox_output
 
@@ -226,12 +232,24 @@ class AutoregressiveDMLL(Hidden2Output):
         s_z = sample_from_dmll(sizes_z.reshape(B*L, -1))
         return torch.cat([s_x, s_y, s_z], dim=-1).view(B, L, 3)
 
-    def sample_shape_codes(self, x, class_labels, sizes):
+    def sample_shape_codes(self, x, class_labels, translations, angles, sizes):
         B, L, _ = class_labels.shape
 
         c = self.fc_class_labels(class_labels)
         cf = torch.cat([x, c], dim=-1)
-        return self.shape_layer(cf)
+        tx = self.pe_trans_x(translations[:, :, 0:1])
+        ty = self.pe_trans_y(translations[:, :, 1:2])
+        tz = self.pe_trans_z(translations[:, :, 2:3])
+        tf = torch.cat([cf, tx, ty, tz], dim=-1)
+        a = self.pe_angle_z(angles)
+        sf = torch.cat([tf, a], dim=-1)
+        sx = self.pe_size_x(sizes[:, :, 0:1])
+        sy = self.pe_size_y(sizes[:, :, 1:2])
+        sz = self.pe_size_z(sizes[:, :, 2:3])
+        sx = self.pe_size_x(sizes[:, :, 0:1])
+        shf = torch.cat([sf, sx, sy, sz], dim=-1)
+
+        return self.shape_layer(shf)
 
     def pred_class_probs(self, x):
         class_labels = self.class_layer(x)
@@ -284,6 +302,7 @@ class AutoregressiveDMLL(Hidden2Output):
 
         class_labels = target_properties[0]
         translations = target_properties[1]
+        sizes = target_properties[2]
         angles = target_properties[3]
 
         c = self.fc_class_labels(class_labels) # get 64 encoding of true class label
@@ -293,6 +312,11 @@ class AutoregressiveDMLL(Hidden2Output):
         tz = self.pe_trans_z(translations[:, :, 2:3])
 
         a = self.pe_angle_z(angles)
+        
+        sx = self.pe_size_x(sizes[:, :, 0:1])
+        sy = self.pe_size_y(sizes[:, :, 1:2])
+        sz = self.pe_size_z(sizes[:, :, 2:3])
+
         class_labels = self.class_layer(x)  # predict class
 
         cf = torch.cat([x, c], dim=-1)
@@ -310,7 +334,8 @@ class AutoregressiveDMLL(Hidden2Output):
             self.size_layer_y(sf),
             self.size_layer_z(sf)
         )
-        shape_codes = self.shape_layer(cf)
+        shf = torch.cat([sf, sx, sy, sz], dim=-1)
+        shape_codes = self.shape_layer(shf)
         # shape_codes = torch.zeros((c.shape[0],1,128), device=angles.device)
         # print(shape_codes.shape)
         return self.bbox_output(sizes, translations, angles, class_labels, shape_codes)

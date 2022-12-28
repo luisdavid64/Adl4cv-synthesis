@@ -142,5 +142,6 @@ class AutoregressiveBBoxOutput(BBoxOutput):
             translation_loss.item()
         StatsLogger.instance()["losses.angle"].value = angle_loss.item()
         StatsLogger.instance()["losses.label"].value = label_loss.item()
+        StatsLogger.instance()["losses.shape_code"].value = shape_loss.item()
         print(label_loss, translation_loss, size_loss, angle_loss, shape_loss)
         return label_loss + translation_loss + size_loss + angle_loss + shape_loss
