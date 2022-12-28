@@ -159,7 +159,6 @@ def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
 
         # Compute the centroid of the vertices in order to match the
         # bbox (because the prediction only considers bboxes)
-        centroid = tr_mesh.centroid
 
         # Extract the predicted affine transformation to position the
         # mesh
@@ -174,8 +173,8 @@ def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
 
         # Create a trimesh object for the same mesh in order to save
         # everything as a single scene
-        tr_mesh.vertices *= sizes.max()
-        tr_mesh.vertices -= centroid
+        tr_mesh.vertices *= sizes.max() * 2
+        tr_mesh.vertices -= tr_mesh.centroid
         tr_mesh.vertices[...] = tr_mesh.vertices.dot(R) + translation
         trimesh_meshes.append(tr_mesh)
 
@@ -191,7 +190,6 @@ def get_textured_objects_from_voxels_gt(bbox_params_t, voxel_shapes):
 
         # Compute the centroid of the vertices in order to match the
         # bbox (because the prediction only considers bboxes)
-        centroid = tr_mesh.centroid
 
         # Extract the predicted affine transformation to position the
         # mesh
