@@ -219,19 +219,19 @@ def main(argv):
         voxel_shapes_gt = autoencoder.decoder(torch.stack(current_scene.shape_codes))
 
         # Generate meshes for predicted objects
-        # renderables, trimesh_meshes = get_textured_objects_from_voxels(
-        #     bbox_params_gt, voxel_shapes_t[None]
-        # )
+        renderables, trimesh_meshes = get_textured_objects_from_voxels(
+            bbox_params_gt, voxel_shapes_t[None]
+        )
 
         # Generate meshes for GT
-        renderables, trimesh_meshes = get_textured_objects_from_voxels_gt(
+        renderables_gt, trimesh_meshes_gt = get_textured_objects_from_voxels_gt(
             bbox_params_gt, voxel_shapes_gt[None]
         )
 
         # old method for comparison
-        renderables_gt, trimesh_meshes_gt = get_textured_objects_gt(
-            bbox_params_gt, objects_dataset, classes
-        )
+        # renderables_gt, trimesh_meshes_gt = get_textured_objects_gt(
+        #     bbox_params_gt, objects_dataset, classes
+        # )
         if trimesh_meshes is not None:
             # Create a trimesh scene and export it
             path_to_objs = os.path.join(

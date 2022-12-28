@@ -145,16 +145,22 @@ def get_floor_plan(scene, floor_textures):
     
 def marching_cubes(voxel_matrix):
     voxel_matrix = torch.round(voxel_matrix).detach().numpy()
+    VALID = True
+    # Check whether matrix is empty
+    if not voxel_matrix.any():
+        return (not VALID), None
     mesh = trimesh.voxel.ops.matrix_to_marching_cubes(voxel_matrix, pitch=1/32)
     mesh.split(only_watertight=True)
-    return mesh
+    return VALID, mesh
 
 def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
     renderables = []
     trimesh_meshes = []
     for j in range(1, bbox_params_t.shape[1]-1):
         # Load the furniture and scale it as it is given in the dataset
-        tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+        valid, tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+        if not valid:
+            continue
         sizes = bbox_params_t[0, j, -4:-1]
 
         # Compute the centroid of the vertices in order to match the
@@ -185,7 +191,9 @@ def get_textured_objects_from_voxels_gt(bbox_params_t, voxel_shapes):
     trimesh_meshes = []
     for j in range(0, bbox_params_t.shape[1]):
         # Load the furniture and scale it as it is given in the dataset
-        tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+        valid, tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+        if not valid:
+            continue
         sizes = bbox_params_t[0, j, -4:-1]
 
         # Compute the centroid of the vertices in order to match the
