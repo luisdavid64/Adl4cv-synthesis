@@ -209,7 +209,7 @@ class DatasetCollection(DatasetDecoratorBase):
         # Compute the max length of the sequences in the batch
         max_length = max(sample["length"] for sample in samples)
 
-        shape_codes_length = samples[0]["shape_codes"][0].shape[1]
+        shape_codes_length = 128 
 
         # Assume that all inputs that are 3D or 1D do not need padding.
         # Otherwise, pad the first dimension.
