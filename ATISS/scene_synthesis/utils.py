@@ -8,6 +8,7 @@
 
 import numpy as np
 from PIL import Image
+import torch
 import trimesh
 from simple_3dviz import Mesh
 from simple_3dviz.renderables.textured_mesh import Material, TexturedMesh
@@ -107,7 +108,7 @@ def get_textured_objects_gt(bbox_params_t, objects_dataset, classes):
             furniture.texture_image_path
         )
         tr_mesh.vertices *= furniture.scale
-        tr_mesh.vertices -= centroid
+        tr_mesh.vertices -= tr_mesh.centroid
         tr_mesh.vertices[...] = tr_mesh.vertices.dot(R) + translation
         trimesh_meshes.append(tr_mesh)
 
@@ -141,3 +142,79 @@ def get_floor_plan(scene, floor_textures):
     )
 
     return floor, tr_floor
+    
+def marching_cubes(voxel_matrix):
+    voxel_matrix = torch.round(voxel_matrix).detach().numpy()
+    VALID = True
+    # Check whether matrix is empty
+    if not voxel_matrix.any():
+        return (not VALID), None
+    mesh = trimesh.voxel.ops.matrix_to_marching_cubes(voxel_matrix, pitch=1/32)
+    mesh.split(only_watertight=True)
+    return VALID, mesh
+
+def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
+    renderables = []
+    trimesh_meshes = []
+    for j in range(1, bbox_params_t.shape[1]-1):
+
+        # Convert voxels into mesh
+        valid, tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+
+        # Ignore degenerate meshes
+        if not valid:
+            continue
+        sizes = bbox_params_t[0, j, -4:-1]
+
+        # Extract the predicted affine transformation to position the
+        # mesh
+        translation = bbox_params_t[0, j, -7:-4]
+        theta = bbox_params_t[0, j, -1]
+        R = np.zeros((3, 3))
+        R[0, 0] = np.cos(theta)
+        R[0, 2] = -np.sin(theta)
+        R[2, 0] = np.sin(theta)
+        R[2, 2] = np.cos(theta)
+        R[1, 1] = 1.
+
+        # Create a trimesh object for the same mesh in order to save
+        # everything as a single scene
+        tr_mesh.vertices *= sizes.max() * 2
+        tr_mesh.vertices -= tr_mesh.centroid
+        tr_mesh.vertices[...] = tr_mesh.vertices.dot(R) + translation
+        trimesh_meshes.append(tr_mesh)
+
+    return renderables, trimesh_meshes
+
+def get_textured_objects_from_voxels_gt(bbox_params_t, voxel_shapes):
+    renderables = []
+    trimesh_meshes = []
+    for j in range(0, bbox_params_t.shape[1]):
+
+        # Convert voxels into mesh
+        valid, tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+
+        # Ignore degenerate meshes
+        if not valid:
+            continue
+        sizes = bbox_params_t[0, j, -4:-1]
+
+        # Extract the predicted affine transformation to position the
+        # mesh
+        translation = bbox_params_t[0, j, -7:-4]
+        theta = bbox_params_t[0, j, -1]
+        R = np.zeros((3, 3))
+        R[0, 0] = np.cos(theta)
+        R[0, 2] = -np.sin(theta)
+        R[2, 0] = np.sin(theta)
+        R[2, 2] = np.cos(theta)
+        R[1, 1] = 1.
+
+        # Create a trimesh object for the same mesh in order to save
+        # everything as a single scene
+        tr_mesh.vertices *= sizes.max() * 2
+        tr_mesh.vertices -= tr_mesh.centroid
+        tr_mesh.vertices[...] = tr_mesh.vertices.dot(R) + translation
+        trimesh_meshes.append(tr_mesh)
+
+    return renderables, trimesh_meshes

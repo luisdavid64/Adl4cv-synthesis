@@ -8,7 +8,10 @@
 
 """Script used for generating scenes using a previously trained model."""
 import sys
+
 sys.path.append('..')
+sys.path.append('../..')
+from autoencoder.network.autoencoder import Autoencoder
 import argparse
 import logging
 import os
@@ -24,7 +27,7 @@ from scene_synthesis.datasets import filter_function, \
     get_dataset_raw_and_encoded
 from scene_synthesis.datasets.threed_future_dataset import ThreedFutureDataset
 from scene_synthesis.networks import build_network
-from scene_synthesis.utils import get_textured_objects, get_textured_objects_gt
+from scene_synthesis.utils import get_textured_objects, get_textured_objects_gt, get_textured_objects_from_voxels, get_textured_objects_from_voxels_gt
 import seaborn as sns
 import trimesh
 
@@ -118,6 +121,17 @@ def main(argv):
         default=None,
         help="The scene id to be used for conditioning"
     )
+    parser.add_argument(
+        "--shape_codes_path",
+        default="../../output/threed_future_encoded_shapes.pkl",
+        help="Path to encodes shapes"
+    )
+    parser.add_argument(
+        "--shape_generator_model_path",
+        default="../../autoencoder/network/output/pretrained_ae.pt",
+        help="Path to encodes shapes"
+    )
+
 
     args = parser.parse_args(argv)
 
@@ -148,7 +162,8 @@ def main(argv):
             config["data"],
             split=config["validation"].get("splits", ["test"])
         ),
-        split=config["validation"].get("splits", ["test"])
+        split=config["validation"].get("splits", ["test"]),
+        shape_codes_path=args.shape_codes_path
     )
     print("Loaded {} scenes with {} object types:".format(
         len(dataset), dataset.n_object_types)
@@ -159,6 +174,10 @@ def main(argv):
         config, args.weight_file, device=device
     )
     network.eval()
+
+    autoencoder = Autoencoder({"z_dim": 128})
+    autoencoder.load_state_dict(torch.load(args.shape_generator_model_path))
+    autoencoder.freeze()
 
     given_scene_id = None
     if args.scene_id:
@@ -176,30 +195,44 @@ def main(argv):
         )
         room_mask = torch.from_numpy(
             np.transpose(current_scene.room_mask[None, :, :, 0:1], (0, 3, 1, 2))
-        )
-        room_mask = room_mask.cuda()
+        ).to(device)
+        
+        room_mask = room_mask
         bbox_params = network.generate_boxes(room_mask=room_mask, device=device)
         boxes = dataset.post_process(bbox_params)
         bbox_params_t = torch.cat([
             boxes["class_labels"],
             boxes["translations"],
             boxes["sizes"],
-            boxes["angles"]
+            boxes["angles"],
         ], dim=-1).cpu().numpy()
+        voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
 
+        # This generates our ground truth.
+        # Are we going to generate our Autoencoder ground truth or real gt?
         bbox_params_gt = np.concatenate([
             current_scene.class_labels[None],
             current_scene.translations[None],
             current_scene.sizes[None],
             current_scene.angles[None]
         ], axis=-1)
+        voxel_shapes_gt = autoencoder.decoder(torch.stack(current_scene.shape_codes))
 
-        renderables, trimesh_meshes = get_textured_objects(
-            bbox_params_t, objects_dataset, classes
+        # Generate meshes for predicted objects
+        renderables, trimesh_meshes = get_textured_objects_from_voxels(
+            bbox_params_t, voxel_shapes_t[None]
         )
-        renderables_gt, trimesh_meshes_gt = get_textured_objects_gt(
-            bbox_params_gt, objects_dataset, classes
+
+        # Generate meshes for GT voxels
+        renderables_gt, trimesh_meshes_gt = get_textured_objects_from_voxels_gt(
+            bbox_params_gt, voxel_shapes_gt[None]
         )
+
+        # old method for comparison
+        # renderables_gt, trimesh_meshes_gt = get_textured_objects_gt(
+        #     bbox_params_gt, objects_dataset, classes
+        # )
+        
         if trimesh_meshes is not None:
             # Create a trimesh scene and export it
             path_to_objs = os.path.join(

@@ -8,6 +8,7 @@
 
 from collections import Counter, OrderedDict
 from functools import lru_cache
+import pickle
 import numpy as np
 import json
 import os
@@ -191,7 +192,8 @@ class CachedRoom(object):
         translations,
         sizes,
         angles,
-        image_path
+        image_path,
+        shape_codes
     ):
         self.scene_id = scene_id
         self.room_layout = room_layout
@@ -203,6 +205,7 @@ class CachedRoom(object):
         self.sizes = sizes
         self.angles = angles
         self.image_path = image_path
+        self.shape_codes = shape_codes
 
     @property
     def floor_plan(self):
@@ -215,9 +218,13 @@ class CachedRoom(object):
 
 
 class CachedThreedFront(ThreedFront):
-    def __init__(self, base_dir, config, scene_ids):
+    def __init__(self, base_dir, config, scene_ids, shape_codes_path):
         self._base_dir = base_dir
         self.config = config
+        self.shape_codes_path = shape_codes_path
+        with open(self.shape_codes_path, "rb") as f:
+            self.shape_codes = pickle.load(f)
+
 
         self._parse_train_stats(config["train_stats"])
 
@@ -252,9 +259,17 @@ class CachedThreedFront(ThreedFront):
         D = np.asarray(img).astype(np.float32) / np.float32(255)
         return D
 
+    def get_encoded_shapes(self,jids):
+        encoded_shapes = []
+        for jid in jids:
+            encoded_shapes.append(self.shape_codes[jid])
+        return encoded_shapes
+
+
     @lru_cache(maxsize=32)
     def __getitem__(self, i):
         D = np.load(self._path_to_rooms[i])
+        shape_codes = self.get_encoded_shapes(D["jids"])
         return CachedRoom(
             scene_id=D["scene_id"],
             room_layout=self._get_room_layout(D["room_layout"]),
@@ -265,7 +280,8 @@ class CachedThreedFront(ThreedFront):
             translations=D["translations"],
             sizes=D["sizes"],
             angles=D["angles"],
-            image_path=self._path_to_renders[i]
+            image_path=self._path_to_renders[i],
+            shape_codes=shape_codes
         )
 
     def get_room_params(self, i):
@@ -278,7 +294,8 @@ class CachedThreedFront(ThreedFront):
             "class_labels": D["class_labels"],
             "translations": D["translations"],
             "sizes": D["sizes"],
-            "angles": D["angles"]
+            "angles": D["angles"],
+            "shape_codes": self.get_encoded_shapes(D["jids"])
         }
 
     def __len__(self):
