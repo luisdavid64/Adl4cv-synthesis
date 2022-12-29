@@ -31,7 +31,7 @@ dataset. The dataset can be obtained in [this webpage](https://tianchi.aliyun.co
 
 ### Data Preprocessing
 
-Once you have downloaded the dataset you need to run the `preprocess_data.py` script to prepare the data for training. To run the preprocessing script run
+Once you have downloaded the dataset you need to run the `preprocess_data.py` script in the autoencoder folder to prepare the data for training. To run the preprocessing script run
 
 ```
 python preprocess_data.py path_to_output_dir path_to_3d_future_dataset_dir -p
@@ -41,3 +41,23 @@ The ```-p``` flag tries to parallelize processing for better performance. The sc
 - model name
 - label
 - a $32\times 32 \times 32$ voxel grid
+
+### Training Autoencoder
+
+To train the autoencoder for scratch, used for shape generation, run: 
+
+```
+python train.py --data_root threed_future_pickle_path
+```
+
+You may also adjust the size of the bottleneck layer by specifying the ```--z_dim``` argument.
+
+## Training Autoregressive network
+
+We base our implementation from [ATISS](https://github.com/nv-tlabs/ATISS). To learn more about the training and scene generation scripts, see this [README](ATISS/README.md).
+
+Before you use any of these scripts, we need to encode the shapes of the 3D-FUTURE dataset using our pretrained encoder. These codes will be used for training and scene generation. To perform the encoding, simply run 
+
+```
+python preprocess.py --data_root threed_future_pickle_path --pretrained_model_path autoencoder_model_path
+```
