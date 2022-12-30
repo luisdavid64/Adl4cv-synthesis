@@ -201,7 +201,7 @@ def main(argv):
         batch_size=config["training"].get("batch_size", 128),
         num_workers=args.n_processes,
         collate_fn=train_dataset.collate_fn,
-        shuffle=True
+        shuffle=False
     )
     print("Loaded {} training scenes with {} object types".format(
         len(train_dataset), train_dataset.n_object_types)
@@ -261,6 +261,8 @@ def main(argv):
     # Do the training
     for i in range(args.continue_from_epoch, epochs):
         network.train()
+        network.requires_grad_(False)
+        network.hidden2output.shape_layer.requires_grad_(True)
         for b, sample in zip(range(steps_per_epoch), yield_forever(train_loader)):
             # Move everything to device
             # sample["shape_codes"] = torch.zeros((sample["lengths"].shape[0],1,128))
@@ -268,7 +270,9 @@ def main(argv):
                 sample[k] = v.to(device)
             batch_loss = train_on_batch(network, optimizer, sample, config)
             StatsLogger.instance().print_progress(i+1, b+1, batch_loss)
-
+            # print(batch_loss, sample)
+            # if(b==2):
+            #     sys.exit()
         if (i % save_every) == 0:
             save_checkpoints(
                 i,

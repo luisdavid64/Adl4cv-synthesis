@@ -118,7 +118,7 @@ def main(argv):
     )
     parser.add_argument(
         "--scene_id",
-        default=None,
+        default="SecondBedroom-15551",
         help="The scene id to be used for conditioning"
     )
     parser.add_argument(
@@ -206,6 +206,7 @@ def main(argv):
             boxes["sizes"],
             boxes["angles"],
         ], dim=-1).cpu().numpy()
+        print(boxes["shape_codes"].shape)
         voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
 
         # This generates our ground truth.
