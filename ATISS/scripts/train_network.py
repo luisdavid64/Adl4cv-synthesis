@@ -261,8 +261,6 @@ def main(argv):
     # Do the training
     for i in range(args.continue_from_epoch, epochs):
         network.train()
-        network.requires_grad_(False)
-        network.hidden2output.shape_layer.requires_grad_(True)
         for b, sample in zip(range(steps_per_epoch), yield_forever(train_loader)):
             # Move everything to device
             # sample["shape_codes"] = torch.zeros((sample["lengths"].shape[0],1,128))

@@ -27,7 +27,7 @@ def get_raw_dataset(
         # Make the train/test/validation splits
         splits_builder = CSVSplitsBuilder(config["annotation_file"])
         split_scene_ids = splits_builder.get_splits(split)
-        # split_scene_ids = ["SecondBedroom-15551"]
+        split_scene_ids = ["SecondBedroom-15551"]
         
         dataset = CachedThreedFront(
             config["dataset_directory"],
