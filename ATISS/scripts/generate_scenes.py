@@ -118,7 +118,7 @@ def main(argv):
     )
     parser.add_argument(
         "--scene_id",
-        default="SecondBedroom-15551",
+        default="None",
         help="The scene id to be used for conditioning"
     )
     parser.add_argument(
