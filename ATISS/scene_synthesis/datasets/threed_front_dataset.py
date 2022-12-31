@@ -541,7 +541,7 @@ def dataset_encoding_factory(
     elif "wocm" in name:
         dataset_collection = Permutation(
             dataset_collection,
-            ["class_labels", "translations", "sizes", "angles"]
+            ["class_labels", "translations", "sizes", "angles", "shape_codes"]
         )
         return AutoregressiveWOCM(dataset_collection)
     else:
