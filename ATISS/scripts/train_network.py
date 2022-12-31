@@ -201,7 +201,7 @@ def main(argv):
         batch_size=config["training"].get("batch_size", 128),
         num_workers=args.n_processes,
         collate_fn=train_dataset.collate_fn,
-        shuffle=False
+        shuffle=True
     )
     print("Loaded {} training scenes with {} object types".format(
         len(train_dataset), train_dataset.n_object_types)
