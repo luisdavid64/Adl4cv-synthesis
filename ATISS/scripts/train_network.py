@@ -270,9 +270,6 @@ def main(argv):
                 sample[k] = v.to(device)
             batch_loss = train_on_batch(network, optimizer, sample, config)
             StatsLogger.instance().print_progress(i+1, b+1, batch_loss)
-            # print(batch_loss, sample)
-            # if(b==2):
-            #     sys.exit()
         if (i % save_every) == 0:
             save_checkpoints(
                 i,

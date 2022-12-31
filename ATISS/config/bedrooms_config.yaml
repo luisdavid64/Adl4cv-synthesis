@@ -31,10 +31,10 @@ feature_extractor:
 
 training:
     splits: ["train", "val"]
-    epochs: 10
+    epochs: 10000
     steps_per_epoch: 500
     batch_size: 128
-    save_frequency: 2
+    save_frequency: 5
     optimizer: Adam
     lr: 0.0001
     weight_decay: 0.001
