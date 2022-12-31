@@ -41,7 +41,7 @@ training:
 
 validation:
     splits: ["test"]
-    frequency: 2
+    frequency: 5
     batch_size: 128
 
 logger:
