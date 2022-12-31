@@ -122,8 +122,8 @@ class AutoregressiveBBoxOutput(BBoxOutput):
         size_loss += dmll(self.sizes_y, target["sizes_y"])
         size_loss += dmll(self.sizes_z, target["sizes_z"])
         angle_loss = dmll(self.angles, target["angles"])
-        test = torch.zeros((128,1,128)).to(angle_loss.device)
-        shape_loss = cross_entropy_loss(self.shape_codes, target["shape_codes"])
+        mse = torch.nn.MSELoss()
+        shape_loss = mse(self.shape_codes, target["shape_codes"])
         
         return label_loss, translation_loss, size_loss, angle_loss, shape_loss
 
@@ -143,5 +143,4 @@ class AutoregressiveBBoxOutput(BBoxOutput):
         StatsLogger.instance()["losses.angle"].value = angle_loss.item()
         StatsLogger.instance()["losses.label"].value = label_loss.item()
         StatsLogger.instance()["losses.shape_code"].value = shape_loss.item()
-        print(label_loss, translation_loss, size_loss, angle_loss, shape_loss)
         return label_loss + translation_loss + size_loss + angle_loss + shape_loss

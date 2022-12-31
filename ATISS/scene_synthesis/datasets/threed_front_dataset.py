@@ -381,9 +381,11 @@ class Permutation(DatasetDecoratorBase):
 
         shapes = sample_params["class_labels"].shape
         ordering = np.random.permutation(shapes[self._permutation_axis])
-
         for k in self._permutation_keys:
-            sample_params[k] = sample_params[k][ordering]
+            if k == "shape_codes":
+                sample_params["shape_codes"] = [sample_params["shape_codes"][i] for i in ordering]
+            else:
+                sample_params[k] = sample_params[k][ordering]
         return sample_params
 
 
@@ -541,7 +543,7 @@ def dataset_encoding_factory(
     elif "wocm" in name:
         dataset_collection = Permutation(
             dataset_collection,
-            ["class_labels", "translations", "sizes", "angles"]
+            ["class_labels", "translations", "sizes", "angles", "shape_codes"]
         )
         return AutoregressiveWOCM(dataset_collection)
     else:
