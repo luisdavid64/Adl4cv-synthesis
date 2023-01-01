@@ -495,7 +495,7 @@ def dataset_encoding_factory(
     if "cached" in name:
         dataset_collection = OrderedDataset(
             CachedDatasetCollection(dataset),
-            ["class_labels", "translations", "sizes", "angles"],
+            ["class_labels", "translations", "sizes", "angles", "shape_codes"],
             box_ordering=box_ordering
         )
     else:

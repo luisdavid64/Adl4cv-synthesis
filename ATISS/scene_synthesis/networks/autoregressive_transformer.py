@@ -74,7 +74,8 @@ class BaseAutoregressiveTransformer(nn.Module):
             "class_labels": start_class,
             "translations": torch.zeros(1, 1, 3, device=device),
             "sizes": torch.zeros(1, 1, 3, device=device),
-            "angles": torch.zeros(1, 1, 1, device=device)
+            "angles": torch.zeros(1, 1, 1, device=device),
+            "shape_codes" : torch.zeros((1,1,128)).to(device)
         }
 
     def end_symbol(self, device="cpu"):
@@ -84,7 +85,8 @@ class BaseAutoregressiveTransformer(nn.Module):
             "class_labels": end_class,
             "translations": torch.zeros(1, 1, 3, device=device),
             "sizes": torch.zeros(1, 1, 3, device=device),
-            "angles": torch.zeros(1, 1, 1, device=device)
+            "angles": torch.zeros(1, 1, 1, device=device),
+            "shape_codes": torch.zeros(1, 1, 128, device=device)
         }
 
     def start_symbol_features(self, B, room_mask):
@@ -226,7 +228,6 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
     @torch.no_grad()
     def generate_boxes(self, room_mask, max_boxes=32, device="cpu"):
         boxes = self.start_symbol(device)
-        boxes["shape_codes"] = torch.zeros((1,1,128)).to(device)
         for i in range(max_boxes):
             box = self.autoregressive_decode(boxes, room_mask=room_mask)
             # print(boxes)
@@ -271,11 +272,16 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
             F, class_label, translations, angles
         )
 
+        shape_codes = self.hidden2output.sample_shape_codes(
+            F, class_label, translations, angles, sizes
+        )
+
         return {
             "class_labels": class_label,
             "translations": translations,
             "sizes": sizes,
-            "angles": angles
+            "angles": angles,
+            "shape_codes": shape_codes
         }
 
     @torch.no_grad()
@@ -296,7 +302,10 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         # Create the initial input to the transformer, namely the start token
         start_box = self.start_symbol(device)
         for k in start_box.keys():
-            boxes[k] = torch.cat([start_box[k], boxes[k]], dim=1)
+            if k == "shape_codes":
+                boxes[k] = [start_box[k]] + boxes[k]
+            else:
+                boxes[k] = torch.cat([start_box[k], boxes[k]], dim=1)
 
         # Based on the query class label sample the location of the new object
         box = self.autoregressive_decode_with_class_label(
@@ -306,7 +315,10 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         )
 
         for k in box.keys():
-            boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
+            if k == "shape_codes":
+                boxes[k] = torch.cat(boxes[k] + [box[k]], dim=1)
+            else:
+                boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
 
         # Creat a box for the end token and update the boxes dictionary
         end_box = self.end_symbol(device)
@@ -317,7 +329,8 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
             "class_labels": boxes["class_labels"],
             "translations": boxes["translations"],
             "sizes": boxes["sizes"],
-            "angles": boxes["angles"]
+            "angles": boxes["angles"],
+            "shape_codes": boxes["shape_codes"]
         }
 
     @torch.no_grad()

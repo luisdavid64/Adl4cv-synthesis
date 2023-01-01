@@ -22,7 +22,7 @@ from simple_3dviz.behaviours.misc import LightToCamera
 from simple_3dviz.behaviours.io import SaveFrames
 from simple_3dviz.utils import render as render_simple_3dviz
 from pathlib import Path
-from scene_synthesis.utils import get_textured_objects
+from scene_synthesis.utils import get_textured_objects, get_textured_objects_from_voxels
 
 
 class DirLock(object):
@@ -261,7 +261,8 @@ def make_network_input(current_boxes, indices):
         class_labels=_prepare(current_boxes["class_labels"][indices]),
         translations=_prepare(current_boxes["translations"][indices]),
         sizes=_prepare(current_boxes["sizes"][indices]),
-        angles=_prepare(current_boxes["angles"][indices])
+        angles=_prepare(current_boxes["angles"][indices]),
+        shape_codes=([ torch.unsqueeze(current_boxes["shape_codes"][i], dim=0) for i in indices])
     )
 
 
@@ -335,7 +336,8 @@ def render_scene_from_bbox_params(
     tr_floor,
     scene,
     path_to_image,
-    path_to_objs
+    path_to_objs,
+    autoencoder
 ):
     boxes = dataset.post_process(bbox_params)
     print_predicted_labels(dataset, boxes)
@@ -347,10 +349,10 @@ def render_scene_from_bbox_params(
             boxes["angles"]
         ],
         dim=-1
-    ).cpu().numpy()
-
-    renderables, trimesh_meshes = get_textured_objects(
-        bbox_params_t, objects_dataset, classes
+    ).cpu().numpy() 
+    voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
+    renderables, trimesh_meshes = get_textured_objects_from_voxels(
+        bbox_params_t, voxel_shapes_t[None]
     )
     renderables += floor_plan
     trimesh_meshes += tr_floor
