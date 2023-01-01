@@ -347,23 +347,29 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         start_box = self.start_symbol(device)
         # Add the start box token in the beginning
         for k in start_box.keys():
-            boxes[k] = torch.cat([start_box[k], boxes[k]], dim=1)
+            if k == "shape_codes":
+                boxes[k] = torch.cat([start_box[k]] + boxes[k])
+            else:
+                boxes[k] = torch.cat([start_box[k], boxes[k]], dim=1)
 
         for i in range(max_boxes):
             box = self.autoregressive_decode(boxes, room_mask=room_mask)
 
             for k in box.keys():
-                boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
+                if k == "shape_codes":
+                    boxes[k] = torch.cat([start_box[k],boxes[k]])
+                else:
+                    boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
 
             # Check if we have the end symbol
             if box["class_labels"][0, 0, -1] == 1:
                 break
-
         return {
             "class_labels": boxes["class_labels"],
             "translations": boxes["translations"],
             "sizes": boxes["sizes"],
-            "angles": boxes["angles"]
+            "angles": boxes["angles"],
+            "shape_codes": boxes["shape_codes"]
         }
 
     def autoregressive_decode_with_class_label_and_translation(
