@@ -1,7 +1,7 @@
 data:
     dataset_type: "cached_threedfront"
     encoding_type: "cached_autoregressive_wocm_eval"
-    dataset_directory: "path_to_dataset_directory"
+    dataset_directory: "../datasets/process_outputs/bedroom"
     annotation_file: "../config/bedroom_threed_front_splits.csv"
     filter_fn: "threed_front_bedroom"
     train_stats: "dataset_stats.txt"

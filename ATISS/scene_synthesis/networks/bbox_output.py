@@ -10,6 +10,7 @@ import torch
 
 from ..losses import cross_entropy_loss, dmll
 from ..stats_logger import StatsLogger
+import torch.nn.functional as F
 
 
 class BBoxOutput(object):
@@ -122,8 +123,7 @@ class AutoregressiveBBoxOutput(BBoxOutput):
         size_loss += dmll(self.sizes_y, target["sizes_y"])
         size_loss += dmll(self.sizes_z, target["sizes_z"])
         angle_loss = dmll(self.angles, target["angles"])
-        mse = torch.nn.MSELoss()
-        shape_loss = mse(self.shape_codes, target["shape_codes"])
+        shape_loss = F.mse_loss(self.shape_codes, target["shape_codes"])
         
         return label_loss, translation_loss, size_loss, angle_loss, shape_loss
 
