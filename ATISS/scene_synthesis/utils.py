@@ -158,8 +158,9 @@ def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
     trimesh_meshes = []
     for j in range(1, bbox_params_t.shape[1]-1):
 
+        voxels = np.squeeze(voxel_shapes[0,j, -1])
         # Convert voxels into mesh
-        valid, tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+        valid, tr_mesh = marching_cubes(voxels)
 
         # Ignore degenerate meshes
         if not valid:
@@ -183,6 +184,13 @@ def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
         tr_mesh.vertices -= tr_mesh.centroid
         tr_mesh.vertices[...] = tr_mesh.vertices.dot(R) + translation
         trimesh_meshes.append(tr_mesh)
+
+        raw_mesh = Mesh.from_voxel_grid(torch.round(voxels).bool().detach().numpy())
+        raw_mesh.scale(sizes.max()*2)
+        # Apply the transformations in order to correctly position the mesh
+        raw_mesh.affine_transform(t=-tr_mesh.centroid)
+        raw_mesh.affine_transform(R=R, t=translation)
+        renderables.append(raw_mesh)
 
     return renderables, trimesh_meshes
 
@@ -190,9 +198,10 @@ def get_textured_objects_from_voxels_gt(bbox_params_t, voxel_shapes):
     renderables = []
     trimesh_meshes = []
     for j in range(0, bbox_params_t.shape[1]):
+        voxels = np.squeeze(voxel_shapes[0,j, -1])
 
         # Convert voxels into mesh
-        valid, tr_mesh = marching_cubes(np.squeeze(voxel_shapes[0, j, -1]))
+        valid, tr_mesh = marching_cubes(voxels)
 
         # Ignore degenerate meshes
         if not valid:
@@ -216,5 +225,12 @@ def get_textured_objects_from_voxels_gt(bbox_params_t, voxel_shapes):
         tr_mesh.vertices -= tr_mesh.centroid
         tr_mesh.vertices[...] = tr_mesh.vertices.dot(R) + translation
         trimesh_meshes.append(tr_mesh)
+        
+        raw_mesh = Mesh.from_voxel_grid(torch.round(voxels).bool().detach().numpy())
+        raw_mesh.scale(sizes.max()*2)
+        # Apply the transformations in order to correctly position the mesh
+        raw_mesh.affine_transform(t=-tr_mesh.centroid)
+        raw_mesh.affine_transform(R=R, t=translation)
+        renderables.append(raw_mesh)
 
     return renderables, trimesh_meshes

@@ -22,7 +22,7 @@ from simple_3dviz.behaviours.misc import LightToCamera
 from simple_3dviz.behaviours.io import SaveFrames
 from simple_3dviz.utils import render as render_simple_3dviz
 from pathlib import Path
-from scene_synthesis.utils import get_textured_objects
+from scene_synthesis.utils import get_textured_objects, get_textured_objects_from_voxels
 
 
 class DirLock(object):
@@ -261,7 +261,8 @@ def make_network_input(current_boxes, indices):
         class_labels=_prepare(current_boxes["class_labels"][indices]),
         translations=_prepare(current_boxes["translations"][indices]),
         sizes=_prepare(current_boxes["sizes"][indices]),
-        angles=_prepare(current_boxes["angles"][indices])
+        angles=_prepare(current_boxes["angles"][indices]),
+        shape_codes=([ torch.unsqueeze(current_boxes["shape_codes"][i], dim=0) for i in indices])
     )
 
 
@@ -274,7 +275,8 @@ def render_to_folder(
     floor_plan,
     scene,
     bbox_params,
-    add_start_end=False
+    add_start_end=False,
+    autoencoder=None
 ):
     boxes = dataset.post_process(bbox_params)
     bbox_params_t = torch.cat(
@@ -293,9 +295,22 @@ def render_to_folder(
             bbox_params_t,
             torch.zeros(1, 1, bbox_params_t.shape[2]),
         ], dim=1)
+        # Add start and end to shape codes
+        if len(boxes["shape_codes"]):
+            boxes["shape_codes"] =  torch.cat([
+                torch.zeros(1, 1, 128),
+                torch.cat(boxes["shape_codes"]),
+                torch.zeros(1, 1, 128)
+            ]) 
+        else:
+            boxes["shape_codes"] =  torch.cat([
+                torch.zeros(1, 1, 128),
+                torch.zeros(1, 1, 128)
+            ]) 
 
-    renderables, trimesh_meshes = get_textured_objects(
-        bbox_params_t.numpy(), objects_dataset, np.array(dataset.class_labels)
+    voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
+    renderables, trimesh_meshes = get_textured_objects_from_voxels(
+        bbox_params_t.numpy(), voxel_shapes_t[None]
     )
     trimesh_meshes += tr_floor
 
@@ -304,25 +319,25 @@ def render_to_folder(
         os.mkdir(path_to_objs)
     export_scene(path_to_objs, trimesh_meshes)
 
-    path_to_image = os.path.join(
-        args.output_directory,
-        folder + "_render.png"
-    )
-    behaviours = [
-        LightToCamera(),
-        SaveFrames(path_to_image, 1)
-    ]
-    render_simple_3dviz(
-        renderables + floor_plan,
-        behaviours=behaviours,
-        size=args.window_size,
-        camera_position=args.camera_position,
-        camera_target=args.camera_target,
-        up_vector=args.up_vector,
-        background=args.background,
-        n_frames=args.n_frames,
-        scene=scene
-    )
+    # path_to_image = os.path.join(
+    #     args.output_directory,
+    #     folder + "_render.png"
+    # )
+    # behaviours = [
+    #     LightToCamera(),
+    #     SaveFrames(path_to_image, 1)
+    # ]
+    # render_simple_3dviz(
+    #     renderables + floor_plan,
+    #     behaviours=behaviours,
+    #     size=args.window_size,
+    #     camera_position=args.camera_position,
+    #     camera_target=args.camera_target,
+    #     up_vector=args.up_vector,
+    #     background=args.background,
+    #     n_frames=args.n_frames,
+    #     scene=scene
+    # )
 
 
 def render_scene_from_bbox_params(
@@ -335,7 +350,8 @@ def render_scene_from_bbox_params(
     tr_floor,
     scene,
     path_to_image,
-    path_to_objs
+    path_to_objs,
+    autoencoder
 ):
     boxes = dataset.post_process(bbox_params)
     print_predicted_labels(dataset, boxes)
@@ -347,30 +363,30 @@ def render_scene_from_bbox_params(
             boxes["angles"]
         ],
         dim=-1
-    ).cpu().numpy()
-
-    renderables, trimesh_meshes = get_textured_objects(
-        bbox_params_t, objects_dataset, classes
+    ).cpu().numpy() 
+    voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
+    renderables, trimesh_meshes = get_textured_objects_from_voxels(
+        bbox_params_t, voxel_shapes_t[None]
     )
     renderables += floor_plan
     trimesh_meshes += tr_floor
 
     # Do the rendering
-    behaviours = [
-        LightToCamera(),
-        SaveFrames(path_to_image+".png", 1)
-    ]
-    render_simple_3dviz(
-        renderables,
-        behaviours=behaviours,
-        size=args.window_size,
-        camera_position=args.camera_position,
-        camera_target=args.camera_target,
-        up_vector=args.up_vector,
-        background=args.background,
-        n_frames=args.n_frames,
-        scene=scene
-    )
+    # behaviours = [
+    #     LightToCamera(),
+    #     SaveFrames(path_to_image+".png", 1)
+    # ]
+    # render_simple_3dviz(
+    #     renderables,
+    #     behaviours=behaviours,
+    #     size=args.window_size,
+    #     camera_position=args.camera_position,
+    #     camera_target=args.camera_target,
+    #     up_vector=args.up_vector,
+    #     background=args.background,
+    #     n_frames=args.n_frames,
+    #     scene=scene
+    # )
     if trimesh_meshes is not None:
         # Create a trimesh scene and export it
         if not os.path.exists(path_to_objs):
