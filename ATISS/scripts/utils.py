@@ -275,7 +275,8 @@ def render_to_folder(
     floor_plan,
     scene,
     bbox_params,
-    add_start_end=False
+    add_start_end=False,
+    autoencoder=None
 ):
     boxes = dataset.post_process(bbox_params)
     bbox_params_t = torch.cat(
@@ -294,9 +295,22 @@ def render_to_folder(
             bbox_params_t,
             torch.zeros(1, 1, bbox_params_t.shape[2]),
         ], dim=1)
+        # Add start and end to shape codes
+        if len(boxes["shape_codes"]):
+            boxes["shape_codes"] =  torch.cat([
+                torch.zeros(1, 1, 128),
+                torch.cat(boxes["shape_codes"]),
+                torch.zeros(1, 1, 128)
+            ]) 
+        else:
+            boxes["shape_codes"] =  torch.cat([
+                torch.zeros(1, 1, 128),
+                torch.zeros(1, 1, 128)
+            ]) 
 
-    renderables, trimesh_meshes = get_textured_objects(
-        bbox_params_t.numpy(), objects_dataset, np.array(dataset.class_labels)
+    voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
+    renderables, trimesh_meshes = get_textured_objects_from_voxels(
+        bbox_params_t.numpy(), voxel_shapes_t[None]
     )
     trimesh_meshes += tr_floor
 

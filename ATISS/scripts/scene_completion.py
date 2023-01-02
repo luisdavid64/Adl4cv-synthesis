@@ -248,7 +248,8 @@ def main(argv):
             floor_plan,
             scene,
             boxes,
-            True
+            True,
+            autoencoder
         )
 
         query_class_label = poll_specific_class(dataset)
