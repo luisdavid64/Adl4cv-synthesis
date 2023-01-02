@@ -357,7 +357,7 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
 
             for k in box.keys():
                 if k == "shape_codes":
-                    boxes[k] = torch.cat([start_box[k],boxes[k]])
+                    boxes[k] = torch.cat([boxes[k], box[k]])
                 else:
                     boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
 
