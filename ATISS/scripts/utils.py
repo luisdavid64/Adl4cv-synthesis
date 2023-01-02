@@ -305,25 +305,25 @@ def render_to_folder(
         os.mkdir(path_to_objs)
     export_scene(path_to_objs, trimesh_meshes)
 
-    path_to_image = os.path.join(
-        args.output_directory,
-        folder + "_render.png"
-    )
-    behaviours = [
-        LightToCamera(),
-        SaveFrames(path_to_image, 1)
-    ]
-    render_simple_3dviz(
-        renderables + floor_plan,
-        behaviours=behaviours,
-        size=args.window_size,
-        camera_position=args.camera_position,
-        camera_target=args.camera_target,
-        up_vector=args.up_vector,
-        background=args.background,
-        n_frames=args.n_frames,
-        scene=scene
-    )
+    # path_to_image = os.path.join(
+    #     args.output_directory,
+    #     folder + "_render.png"
+    # )
+    # behaviours = [
+    #     LightToCamera(),
+    #     SaveFrames(path_to_image, 1)
+    # ]
+    # render_simple_3dviz(
+    #     renderables + floor_plan,
+    #     behaviours=behaviours,
+    #     size=args.window_size,
+    #     camera_position=args.camera_position,
+    #     camera_target=args.camera_target,
+    #     up_vector=args.up_vector,
+    #     background=args.background,
+    #     n_frames=args.n_frames,
+    #     scene=scene
+    # )
 
 
 def render_scene_from_bbox_params(
@@ -358,21 +358,21 @@ def render_scene_from_bbox_params(
     trimesh_meshes += tr_floor
 
     # Do the rendering
-    behaviours = [
-        LightToCamera(),
-        SaveFrames(path_to_image+".png", 1)
-    ]
-    render_simple_3dviz(
-        renderables,
-        behaviours=behaviours,
-        size=args.window_size,
-        camera_position=args.camera_position,
-        camera_target=args.camera_target,
-        up_vector=args.up_vector,
-        background=args.background,
-        n_frames=args.n_frames,
-        scene=scene
-    )
+    # behaviours = [
+    #     LightToCamera(),
+    #     SaveFrames(path_to_image+".png", 1)
+    # ]
+    # render_simple_3dviz(
+    #     renderables,
+    #     behaviours=behaviours,
+    #     size=args.window_size,
+    #     camera_position=args.camera_position,
+    #     camera_target=args.camera_target,
+    #     up_vector=args.up_vector,
+    #     background=args.background,
+    #     n_frames=args.n_frames,
+    #     scene=scene
+    # )
     if trimesh_meshes is not None:
         # Create a trimesh scene and export it
         if not os.path.exists(path_to_objs):
