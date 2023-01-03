@@ -193,11 +193,10 @@ def main(argv):
         print("{} / {}: Using the {} floor plan of scene {}".format(
             i, args.n_sequences, scene_idx, current_scene.scene_id)
         )
-        room_mask = torch.from_numpy(
-            np.transpose(current_scene.room_mask[None, :, :, 0:1], (0, 3, 1, 2))
-        ).to(device)
-        
-        room_mask = room_mask
+        # Get a floor plan
+        floor_plan, tr_floor, room_mask = floor_plan_from_scene(
+            current_scene, args.path_to_floor_plan_textures
+        )
         bbox_params = network.generate_boxes(room_mask=room_mask, device=device)
         boxes = dataset.post_process(bbox_params)
         bbox_params_t = torch.cat([
@@ -241,7 +240,7 @@ def main(argv):
             )
             if not os.path.exists(path_to_objs):
                 os.makedirs(path_to_objs)
-            export_scene(path_to_objs, trimesh_meshes, boxes["class_labels"][0], classes, color_palette)
+            export_scene(path_to_objs, trimesh_meshes, boxes["class_labels"][0], classes, color_palette, tr_floor[0])
 
         if trimesh_meshes_gt is not None:
             # Create a trimesh scene and export it
@@ -251,23 +250,31 @@ def main(argv):
             )
             if not os.path.exists(path_to_objs):
                 os.makedirs(path_to_objs)
-            export_scene_gt(path_to_objs, trimesh_meshes_gt, current_scene.class_labels, classes, color_palette)
+            export_scene_gt(path_to_objs, trimesh_meshes_gt, current_scene.class_labels, classes, color_palette, tr_floor[0])
 
-def export_scene(path_to_objs, trimesh_meshes, class_labels, classes, color_palette):
+def export_floor_plan(path, floor_plan):
+    ply_file = path + '/floor.ply'
+    trimesh_mesh = trimesh.Trimesh(vertices=floor_plan.vertices, faces=floor_plan.faces)
+    trimesh_mesh.export(ply_file)
+
+
+def export_scene(path_to_objs, trimesh_meshes, class_labels, classes, color_palette, floor_plan):
     for (inst_idx, trimesh_mesh) in zip(range(1, class_labels.shape[0]-1), trimesh_meshes):
         cls_label = class_labels[inst_idx].argmax()
         color = color_palette[cls_label]
         ply_file = path_to_objs + '/%d_%s.ply' % (inst_idx, classes[cls_label])
         trimesh_mesh = trimesh.Trimesh(vertices=trimesh_mesh.vertices, faces=trimesh_mesh.faces, vertex_colors=color)
         trimesh_mesh.export(ply_file)
+    export_floor_plan(path_to_objs, floor_plan)
 
-def export_scene_gt(path_to_objs, trimesh_meshes, class_labels, classes, color_palette):
+def export_scene_gt(path_to_objs, trimesh_meshes, class_labels, classes, color_palette, floor_plan):
     for (inst_idx, trimesh_mesh) in zip(range(class_labels.shape[0]), trimesh_meshes):
         cls_label = class_labels[inst_idx].argmax()
         color = color_palette[cls_label]
         ply_file = path_to_objs + '/%d_%s.ply' % (inst_idx, classes[cls_label])
         trimesh_mesh = trimesh.Trimesh(vertices=trimesh_mesh.vertices, faces=trimesh_mesh.faces, vertex_colors=color)
         trimesh_mesh.export(ply_file)
+    export_floor_plan(path_to_objs, floor_plan)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
