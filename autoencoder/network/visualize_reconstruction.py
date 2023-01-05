@@ -1,10 +1,8 @@
-import itertools
 from argparse import ArgumentParser
 import pickle
 from autoencoder import Autoencoder
 import torch
 import trimesh
-from matplotlib import pyplot as plt
 import random
 # Marching cubes reconstruction of matrix for sanity check
 def marching_cubes(voxel_matrix):
@@ -31,9 +29,6 @@ if __name__ == "__main__":
 
     parser.add_argument("--data_root", type=str, default="../tmp/threed_future.pkl", help="Data root directory")
     parser.add_argument("--z_dim", type=int, default=128, help="Size of latent vector z")
-    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate for optimizer")
-    parser.add_argument("--beta1", type=float, default=0.9, help="Beta1 hyperparameter for Adam optimizer")
-    parser.add_argument("--beta2", type=float, default=0.999, help="Beta2 hyperparameter for Adam optimizer")
     parser.add_argument("--pretrained_model_path", type=str, default="output/pretrained_ae.pt", help="Pretrained model location")
     args = vars(parser.parse_args())
     print(args)

@@ -10,7 +10,7 @@ The simplest way to make sure that you have all dependencies in place is to use
 create a conda environment called ```project``` using
 ```
 conda env create -f environment.yml
-conda activate project
+conda activate adlproject
 ```
 
 To set up ATISS, follow the instructions in the readme belonging to it.

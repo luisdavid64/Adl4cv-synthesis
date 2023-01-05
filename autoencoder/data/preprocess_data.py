@@ -92,7 +92,7 @@ def process_object(model):
     })
 
 
-def pickle_threed_future_dataset_parallel(data):
+def pickle_threed_future_dataset_parallel(data, output_dir):
 
     num_cores = (multiprocessing.cpu_count() - 1) or 1 
     with ProcessPoolExecutor(max_workers=num_cores) as pool:
@@ -107,11 +107,11 @@ def pickle_threed_future_dataset_parallel(data):
             for future in futures:
                 object = future.result()
                 objects.append(object)
+    with open(os.path.join(output_dir,'threed_future.pkl'), 'wb') as f:
+        pickle.dump(objects, f)
+        print(f"Data saved at: {f.name}")
 
-    pickle.dump(objects, open("/tmp/threed_future.pkl", "wb"))
-    print("Data saved at: /tmp/threed_future.pkl")
-
-def pickle_threed_future_dataset(data):
+def pickle_threed_future_dataset(data, output_dir):
     objects = []
     print("Parsing dataset ", end="")
     for i in range(len(data)):
@@ -125,14 +125,15 @@ def pickle_threed_future_dataset(data):
         s = "{:5d} / {:5d}".format(i, len(data))
         print(s, flush=True, end="\b"*len(s))
     print()
-    pickle.dump(objects, open("/tmp/threed_future.pkl", "wb"))
-    print("Data saved at: /tmp/threed_future.pkl")
+    with open(os.path.join(output_dir,'threed_future.pkl'), 'wb') as f:
+        pickle.dump(objects, f)
+        print(f"Data saved at: {f.name}")
 
-def pickle_dataset(data, parallelize=False):
+def pickle_dataset(data, output_dir, parallelize=False):
     if parallelize:
-        pickle_threed_future_dataset_parallel(data)
+        pickle_threed_future_dataset_parallel(data, output_dir)
     else:
-        pickle_threed_future_dataset(data)
+        pickle_threed_future_dataset(data, output_dir)
 
 
 def serialize_stats(data, output_dir):
@@ -157,12 +158,13 @@ def main(argv):
         description="Prepare the 3D-FUTURE objects to train our model"
     )
     parser.add_argument(
-        "output_directory",
-        default="./tmp/future_voxels",
+        "--output_directory",
+        default="../../output/",
         help="Path to output directory"
     )
     parser.add_argument(
         "path_to_3d_future_dataset_directory",
+        default="../../ATISS/datasets/3D-Front/3D-FUTURE-model",
         help="Path to the 3D-FRONT dataset"
     )
     parser.add_argument('-p', action='store_true')
@@ -189,7 +191,7 @@ def main(argv):
     # Produce json file for statistics file in output directory
     serialize_stats(data, args.output_directory)
     # Pickle dataset to /tmp/threed_future.pkl
-    pickle_dataset(data, args.p)
+    pickle_dataset(data, args.output_directory ,args.p)
 
     
 

@@ -4,13 +4,8 @@ from autoencoder import Autoencoder
 import torch
 import trimesh
 import pickle
-from matplotlib import pyplot as plt
 from util import filter_data
-import matplotlib.pyplot as plt
 import trimesh
-from mpl_toolkits.mplot3d import Axes3D
-import io
-from PIL import Image
 import random
 
 def marching_cubes(voxel_matrix):
@@ -19,12 +14,12 @@ def marching_cubes(voxel_matrix):
     return mesh
 
 def save_interpolations(shapes, n=6):
-    SAVE_DIRECTORY = "output/interpolations"
+    SAVE_DIRECTORY = "../../output/interpolations/"
     if not os.path.exists(SAVE_DIRECTORY):
         os.makedirs(SAVE_DIRECTORY)
     for i in range(n):
         mesh = marching_cubes(shapes[i])
-        mesh.export(SAVE_DIRECTORY + str(i) + ".stl")
+        mesh.export(SAVE_DIRECTORY + "interpolation" + str(i) + ".stl")
 
 def main(hparams):
     autoencoder = Autoencoder(hparams)
@@ -51,9 +46,6 @@ if __name__ == "__main__":
 
     parser.add_argument("--data_root", type=str, default="../tmp/threed_future.pkl", help="Data root directory")
     parser.add_argument("--z_dim", type=int, default=128, help="Size of latent vector z")
-    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate for optimizer")
-    parser.add_argument("--beta1", type=float, default=0.9, help="Beta1 hyperparameter for Adam optimizer")
-    parser.add_argument("--beta2", type=float, default=0.999, help="Beta2 hyperparameter for Adam optimizer")
     parser.add_argument("--pretrained_model_path", type=str, default="output/pretrained_ae.pt", help="Pretrained model location")
     parser.add_argument("--num_objects", type=str, default=40, help="Number of objects to interpolate")
     parser.add_argument("--filter_term", type=str, default="double_bed", help="Filter items")
