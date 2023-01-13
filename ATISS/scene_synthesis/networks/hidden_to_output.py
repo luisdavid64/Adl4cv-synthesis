@@ -239,18 +239,10 @@ class AutoregressiveDMLL(Hidden2Output):
         B, L, _ = class_labels.shape
 
         c = self.fc_class_labels(class_labels)
-        cf = torch.cat([x, c], dim=-1)
-        tx = self.pe_trans_x(translations[:, :, 0:1])
-        ty = self.pe_trans_y(translations[:, :, 1:2])
-        tz = self.pe_trans_z(translations[:, :, 2:3])
-        tf = torch.cat([cf, tx, ty, tz], dim=-1)
-        a = self.pe_angle_z(angles)
-        sf = torch.cat([tf, a], dim=-1)
         sx = self.pe_size_x(sizes[:, :, 0:1])
         sy = self.pe_size_y(sizes[:, :, 1:2])
         sz = self.pe_size_z(sizes[:, :, 2:3])
         sx = self.pe_size_x(sizes[:, :, 0:1])
-        shf = torch.cat([sf, sx, sy, sz], dim=-1)
         shfnew = torch.cat([c, sx, sy, sz], dim=-1)
         return self.shape_layer(shfnew)
 
