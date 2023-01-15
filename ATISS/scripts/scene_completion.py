@@ -70,7 +70,9 @@ def main(argv):
         help="Path to the 3D-FUTURE model meshes"
     )
     parser.add_argument(
-        "path_to_floor_plan_textures",
+        "--path_to_floor_plan_textures",
+        type=str,
+        default='../datasets/3D-Front/3D-FRONT-texture',
         help="Path to floor texture images"
     )
     parser.add_argument(
@@ -259,7 +261,8 @@ def main(argv):
             bbox_params = network.add_object(
                 room_mask=room_mask,
                 class_label=query_class_label,
-                boxes=boxes
+                boxes=boxes,
+                device=device
             )
         else:
             print("Doing scene completion")
@@ -279,6 +282,7 @@ def main(argv):
             args.output_directory,
             "complete_{}_{:03d}".format(current_scene.scene_id, i)
         )
+        bbox_params = {k: v.cpu() for k, v in bbox_params.items()}
         render_scene_from_bbox_params(
             args,
             bbox_params,

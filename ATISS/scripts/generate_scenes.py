@@ -197,6 +197,7 @@ def main(argv):
         floor_plan, tr_floor, room_mask = floor_plan_from_scene(
             current_scene, args.path_to_floor_plan_textures
         )
+        room_mask=room_mask.to(device)
         bbox_params = network.generate_boxes(room_mask=room_mask, device=device)
         boxes = dataset.post_process(bbox_params)
         bbox_params_t = torch.cat([

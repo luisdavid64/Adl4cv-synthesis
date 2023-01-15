@@ -303,20 +303,19 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         start_box = self.start_symbol(device)
         for k in start_box.keys():
             if k == "shape_codes":
-                boxes[k] = [start_box[k]] + boxes[k]
+                boxes[k] = torch.cat([start_box[k]] + [b.to(device) for b in boxes[k]], dim=1).to(device)
             else:
-                boxes[k] = torch.cat([start_box[k], boxes[k]], dim=1)
-
+                boxes[k] = torch.cat([start_box[k], boxes[k].to(device)], dim=1)
         # Based on the query class label sample the location of the new object
         box = self.autoregressive_decode_with_class_label(
             boxes=boxes,
-            room_mask=room_mask,
-            class_label=class_label
+            room_mask=room_mask.to(device),
+            class_label=class_label.to(device)
         )
 
         for k in box.keys():
             if k == "shape_codes":
-                boxes[k] = torch.cat(boxes[k] + [box[k]], dim=1)
+                boxes[k] = torch.cat([boxes[k]] + [box[k].to(device)], dim=1)
             else:
                 boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
 
