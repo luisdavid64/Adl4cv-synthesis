@@ -61,3 +61,17 @@ Before you use any of these scripts, we need to encode the shapes of the 3D-FUTU
 ```
 python preprocess.py --data_root threed_future_pickle_path --pretrained_model_path autoencoder_model_path
 ```
+
+## Evaluation
+
+The autoencoder and the auto-regressive network can be tested using the following scripts: 
+
+```
+python evaluate_autoencoder.py --data_root pickled_model_path --pretrained_model_path model_path
+```
+
+```
+python evaluate.py config_file output_directory --path_to_pickled_3d_future_models pickled_model_path
+```
+
+These calculate the chamfer distance of the reconstructions and the chamfer distance of the objects in the scene respectively.
