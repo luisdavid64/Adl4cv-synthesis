@@ -1,9 +1,4 @@
 ## ATISS: Autoregressive Transformers for Indoor Scene Synthesis
-<p>
-    <img width="240" alt="Example 1" src="img/room_1.gif"/>
-    <img width="240" alt="Example 2" src="img/room_2.gif"/>
-    <img width="240" alt="Example 3" src="img/room_3.gif"/>
-</p>
 
 This repository contains the code that accompanies our paper [ATISS:
 Autoregressive Transformers for Indoor Scene
@@ -190,30 +185,6 @@ a partial scene add an object of a specific object category.
 In the output directory, the `scene_completion.py` script generates two folders
 for each completion, one that contains the mesh files of the initial partial
 scene and another one that contains the mesh files of the completed scene.
-
-### Object Suggestions
-
-We also provide a script that performs object suggestions based on a
-user-specified region of acceptable positions. Similar to the previous scripts
-you can execute by running
-```
-python object_suggestion.py path_to_config_yaml path_to_output_dir path_to_3d_future_pickled_data path_to_floor_plan_texture_images --weight_file path_to_weight_file
-```
-where the argument ``--weight_file`` specifies the path to a trained model and
-the argument ``path_to_config_yaml`` defines the path to the config file used
-to train that particular model. Also for this script, please make sure that the
-`encoding type` in the config file has also the word `eval` in it.  By default
-this script randomly selects a room from the test set and the user can either
-choose to remove some objects or keep it unchanged. Subsequently, the user
-needs to specify the acceptable positions to place an object using 6 comma
-seperated numbers that define the bounding box of the valid positions.
-Similar to the previous scripts, it is possible to select a particular scene by 
-choosing specific room via the `--scene_id` argument.
-
-In the output directory, the `object_suggestion.py` script generates two folders
-in each run, one that contains the mesh files of the initial
-scene and another one that contains the mesh files of the completed scene with
-the suggested object.
 
 ### Failure Cases Detection and Correction
 
