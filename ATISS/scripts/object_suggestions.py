@@ -26,7 +26,7 @@ from scene_synthesis.datasets import filter_function, \
     get_dataset_raw_and_encoded
 from scene_synthesis.datasets.threed_future_dataset import ThreedFutureDataset
 from scene_synthesis.networks import build_network
-from scene_synthesis.utils import get_textured_objects
+from scene_synthesis.utils import get_textured_objects, get_textured_objects_from_voxels
 
 from simple_3dviz import Scene, Mesh
 from simple_3dviz.window import show
@@ -34,7 +34,12 @@ from simple_3dviz.behaviours.misc import LightToCamera
 from simple_3dviz.behaviours.io import SaveFrames
 from simple_3dviz.utils import render
 
+sys.path.append('..')
+sys.path.append('../..')
+from autoencoder.network.autoencoder import Autoencoder
 
+
+# Parametrization: x,y,z, w, l, h
 def poll_objects(dataset, current_boxes, scene_id):
     """Show the objects in the current_scene and ask which ones to be
     removed."""
@@ -69,6 +74,7 @@ def render_to_folder(
     bbox_params,
     bbox_bounds,
     add_start_end=False,
+    autoencoder=None
 ):
     boxes = dataset.post_process(bbox_params)
     bbox_params_t = torch.cat(
@@ -87,37 +93,30 @@ def render_to_folder(
             bbox_params_t,
             torch.zeros(1, 1, bbox_params_t.shape[2]),
         ], dim=1)
+        # Add start and end to shape codes
+        if len(boxes["shape_codes"]):
+            boxes["shape_codes"] =  torch.cat([
+                torch.zeros(1, 1, 128),
+                torch.cat(boxes["shape_codes"]),
+                torch.zeros(1, 1, 128)
+            ]) 
+        else:
+            boxes["shape_codes"] =  torch.cat([
+                torch.zeros(1, 1, 128),
+                torch.zeros(1, 1, 128)
+            ]) 
 
-    renderables, trimesh_meshes = get_textured_objects(
-        bbox_params_t.numpy(), objects_dataset, np.array(dataset.class_labels)
+    voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
+    _, trimesh_meshes = get_textured_objects_from_voxels(
+        bbox_params_t.numpy(), voxel_shapes_t[None]
     )
 
-    box_renderable, box_trimesh = post_process_box(dataset, bbox_bounds)
+    _, box_trimesh = post_process_box(dataset, bbox_bounds)
 
     path_to_objs = os.path.join(args.output_directory, folder)
     if not os.path.exists(path_to_objs):
         os.mkdir(path_to_objs)
     export_scene(path_to_objs, tr_floor + [box_trimesh] + trimesh_meshes)
-
-    path_to_image = os.path.join(
-        args.output_directory,
-        folder + "_render.png"
-    )
-    behaviours = [
-        LightToCamera(),
-        SaveFrames(path_to_image, 1)
-    ]
-    render(
-        renderables + floor_plan + [box_renderable],
-        behaviours=behaviours,
-        size=args.window_size,
-        camera_position=args.camera_position,
-        camera_target=args.camera_target,
-        up_vector=args.up_vector,
-        background=args.background,
-        n_frames=args.n_frames,
-        scene=scene
-    )
 
 
 def post_process_box(dataset, bbox_bounds):
@@ -128,7 +127,7 @@ def post_process_box(dataset, bbox_bounds):
         translations=torch.tensor([
             [bbox_bounds[0], bbox_bounds[2], bbox_bounds[4]],
             [bbox_bounds[1], bbox_bounds[3], bbox_bounds[5]]
-        ])[None]
+        ])[None],
     )
     boxes = dataset.post_process(boxes)
 
@@ -279,6 +278,16 @@ def main(argv):
         default=100000,
         help="How many trials to do for rejection sampling"
     )
+    parser.add_argument(
+        "--shape_codes_path",
+        default="../../output/threed_future_encoded_shapes.pkl",
+        help="Path to encoded shapes"
+    )
+    parser.add_argument(
+        "--shape_generator_model_path",
+        default="../../autoencoder/network/output/pretrained_ae.pt",
+        help="Path to pretrained autoencoder"
+    )
 
     args = parser.parse_args(argv)
 
@@ -303,7 +312,8 @@ def main(argv):
             config["data"],
             split=config["training"].get("splits", ["train", "val"])
         ),
-        split=config["training"].get("splits", ["train", "val"])
+        split=config["training"].get("splits", ["train", "val"]),
+        shape_codes_path=args.shape_codes_path
     )
 
     # Build the dataset of 3D models
@@ -318,7 +328,8 @@ def main(argv):
             config["data"],
             split=config["validation"].get("splits", ["test"])
         ),
-        split=config["validation"].get("splits", ["test"])
+        split=config["validation"].get("splits", ["test"]),
+        shape_codes_path=args.shape_codes_path
     )
     print("Loaded {} scenes with {} object types:".format(
         len(dataset), dataset.n_object_types)
@@ -336,6 +347,10 @@ def main(argv):
     scene.camera_target = args.camera_target
     scene.camera_position = args.camera_position
     scene.light = args.camera_position
+
+    autoencoder = Autoencoder({"z_dim": 128})
+    autoencoder.load_state_dict(torch.load(args.shape_generator_model_path))
+    autoencoder.freeze()
 
     given_scene_id = None
     if args.scene_id:
@@ -373,6 +388,7 @@ def main(argv):
             boxes,
             bbox_bounds,
             True,
+            autoencoder
         )
 
         # Given the current context predict the probability of all class labels
@@ -423,7 +439,8 @@ def main(argv):
             tr_floor,
             scene,
             path_to_image,
-            path_to_objs
+            path_to_objs,
+            autoencoder
         )
 
 

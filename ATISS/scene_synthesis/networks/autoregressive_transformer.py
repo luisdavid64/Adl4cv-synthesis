@@ -396,11 +396,16 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
             F, class_label, translation, angles
         )
 
+        shape_codes = self.hidden2output.sample_shape_codes(
+            F, class_label, translation, angles, sizes
+        )
+
         return {
             "class_labels": class_label,
             "translations": translation,
             "sizes": sizes,
-            "angles": angles
+            "angles": angles,
+            "shape_codes": shape_codes
         }
 
     @torch.no_grad()
@@ -429,7 +434,10 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         # Create the initial input to the transformer, namely the start token
         start_box = self.start_symbol(device)
         for k in start_box.keys():
-            boxes[k] = torch.cat([start_box[k], boxes[k]], dim=1)
+            if k == "shape_codes":
+                boxes[k] = torch.cat([start_box[k]] + [b.to(device) for b in boxes[k]], dim=1).to(device)
+            else:
+                boxes[k] = torch.cat([start_box[k], boxes[k].to(device)], dim=1)
 
         # Based on the query class label sample the location of the new object
         box = self.autoregressive_decode_with_class_label_and_translation(
@@ -438,9 +446,11 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
             translation=translation,
             room_mask=room_mask
         )
-
         for k in box.keys():
-            boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
+            if k == "shape_codes":
+                boxes[k] = torch.cat([boxes[k]] + [box[k].to(device)], dim=1)
+            else:
+                boxes[k] = torch.cat([boxes[k], box[k]], dim=1)
 
         # Creat a box for the end token and update the boxes dictionary
         end_box = self.end_symbol(device)
@@ -451,7 +461,8 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
             "class_labels": boxes["class_labels"],
             "translations": boxes["translations"],
             "sizes": boxes["sizes"],
-            "angles": boxes["angles"]
+            "angles": boxes["angles"],
+            "shape_codes": boxes["shape_codes"]
         }
 
     @torch.no_grad()
@@ -462,7 +473,10 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         start_box = self.start_symbol(device)
         # Add the start box token in the beginning
         for k in start_box.keys():
-            boxes[k] = torch.cat([start_box[k], boxes[k]], dim=1)
+            if k == "shape_codes":
+                boxes[k] = torch.cat([start_box[k]] + [b.to(device) for b in boxes[k]], dim=1).to(device)
+            else:
+                boxes[k] = torch.cat([start_box[k], boxes[k].to(device)], dim=1)
 
         # Compute the features using the transformer
         F = self._encode(boxes, room_mask)
@@ -495,7 +509,10 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         # Concatenate to the given input (that's why we shallow copy in the
         # beginning of this method
         for k in start_box.keys():
-            boxes[k] = torch.cat([start_box[k], boxes[k]], dim=1)
+            if k == "shape_codes":
+                boxes[k] = torch.cat([start_box[k]] + [b.to(device) for b in boxes[k]], dim=1).to(device)
+            else:
+                boxes[k] = torch.cat([start_box[k], boxes[k].to(device)], dim=1)
 
         # Compute the features using the transformer
         F = self._encode(boxes, room_mask)
