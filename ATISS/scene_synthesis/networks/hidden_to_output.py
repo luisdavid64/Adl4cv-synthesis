@@ -239,11 +239,12 @@ class AutoregressiveDMLL(Hidden2Output):
         B, L, _ = class_labels.shape
 
         c = self.fc_class_labels(class_labels)
+        cf = torch.cat([x, c], dim=-1)
         sx = self.pe_size_x(sizes[:, :, 0:1])
         sy = self.pe_size_y(sizes[:, :, 1:2])
         sz = self.pe_size_z(sizes[:, :, 2:3])
         sx = self.pe_size_x(sizes[:, :, 0:1])
-        shfnew = torch.cat([c, sx, sy, sz], dim=-1)
+        shfnew = torch.cat([cf, sx, sy, sz], dim=-1)
         return self.shape_layer(shfnew)
 
     def pred_class_probs(self, x):
