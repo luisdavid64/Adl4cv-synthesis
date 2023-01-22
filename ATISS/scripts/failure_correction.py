@@ -33,6 +33,10 @@ from simple_3dviz.behaviours.misc import LightToCamera
 from simple_3dviz.behaviours.io import SaveFrames
 from simple_3dviz.utils import render
 
+sys.path.append('..')
+sys.path.append('../..')
+from autoencoder.network.autoencoder import Autoencoder
+
 
 def poll_object(dataset, current_boxes, scene_id):
     """Show the objects in the current_scene and ask which ones to be
@@ -60,7 +64,8 @@ def make_network_input(current_boxes, idx, offset, rotation):
         translations=_prepare(current_boxes["translations"]),
         sizes=_prepare(current_boxes["sizes"]),
         angles=_prepare(current_boxes["angles"]),
-        room_layout=_prepare(current_boxes["room_layout"])
+        room_layout=_prepare(current_boxes["room_layout"]),
+        shape_codes= list(map(lambda tens: torch.unsqueeze(tens, dim=0), current_boxes["shape_codes"]))
     )
     boxes["translations"][0, idx] += torch.tensor(offset).float()
     boxes["angles"][0, idx] = (boxes["angles"][0, idx] + 1 + rotation) % 2 - 1
@@ -76,11 +81,13 @@ def extract_object(boxes, idx):
         translations=boxes["translations"][:, indices],
         sizes=boxes["sizes"][:, indices],
         angles=boxes["angles"][:, indices],
+        shape_codes= [boxes["shape_codes"][i] for i in indices],
         room_layout=boxes["room_layout"],
         class_labels_tr=boxes["class_labels"][:, idx:idx+1],
         translations_tr=boxes["translations"][:, idx:idx+1],
         angles_tr=boxes["angles"][:, idx:idx+1],
         sizes_tr=boxes["sizes"][:, idx:idx+1],
+        shape_codes_tr= boxes["shape_codes"][idx],
         lengths=torch.tensor([n_objects-1])
     )
 
@@ -162,6 +169,16 @@ def main(argv):
         default=None,
         help="The scene id to be used for conditioning"
     )
+    parser.add_argument(
+        "--shape_codes_path",
+        default="../../output/threed_future_encoded_shapes.pkl",
+        help="Path to encodes shapes"
+    )
+    parser.add_argument(
+        "--shape_generator_model_path",
+        default="../../autoencoder/network/output/pretrained_ae.pt",
+        help="Path to encodes shapes"
+    )
 
     args = parser.parse_args(argv)
 
@@ -186,7 +203,8 @@ def main(argv):
             config["data"],
             split=config["training"].get("splits", ["train", "val"])
         ),
-        split=config["training"].get("splits", ["train", "val"])
+        split=config["training"].get("splits", ["train", "val"]),
+        shape_codes_path=args.shape_codes_path
     )
 
     # Build the dataset of 3D models
@@ -201,7 +219,8 @@ def main(argv):
             config["data"],
             split=config["validation"].get("splits", ["test"])
         ),
-        split=config["validation"].get("splits", ["test"])
+        split=config["validation"].get("splits", ["test"]),
+        shape_codes_path=args.shape_codes_path
     )
     print("Loaded {} scenes with {} object types:".format(
         len(dataset), dataset.n_object_types)
@@ -212,6 +231,10 @@ def main(argv):
         config, args.weight_file, device=device
     )
     network.eval()
+
+    autoencoder = Autoencoder({"z_dim": 128})
+    autoencoder.load_state_dict(torch.load(args.shape_generator_model_path))
+    autoencoder.freeze()
 
     # Create the scene and the behaviour list for simple-3dviz
     scene = Scene(size=args.window_size)
@@ -248,7 +271,7 @@ def main(argv):
             idx,
             offset,
             rotation
-        )
+        ) 
 
         # Render the failed scene
         render_to_folder(
@@ -260,7 +283,8 @@ def main(argv):
             floor_plan,
             scene,
             boxes,
-            True
+            True,
+            autoencoder
         )
 
         # Compute object probabilities and pick out the worst
@@ -310,7 +334,8 @@ def main(argv):
             tr_floor,
             scene,
             path_to_image,
-            path_to_objs
+            path_to_objs,
+            autoencoder
         )
 
 
