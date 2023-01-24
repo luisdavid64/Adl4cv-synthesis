@@ -38,7 +38,7 @@ sys.path.append('..')
 sys.path.append('../..')
 from autoencoder.network.autoencoder import Autoencoder
 
-import cfg
+from cfg import shape_codes_dim
 
 
 # Parametrization: x,y,z, w, l, h
@@ -98,14 +98,14 @@ def render_to_folder(
         # Add start and end to shape codes
         if len(boxes["shape_codes"]):
             boxes["shape_codes"] =  torch.cat([
-                torch.zeros(1, 1, cfg.shape_codes_dim),
+                torch.zeros(1, 1, shape_codes_dim),
                 torch.cat(boxes["shape_codes"]),
-                torch.zeros(1, 1, cfg.shape_codes_dim)
+                torch.zeros(1, 1, shape_codes_dim)
             ]) 
         else:
             boxes["shape_codes"] =  torch.cat([
-                torch.zeros(1, 1, cfg.shape_codes_dim),
-                torch.zeros(1, 1, cfg.shape_codes_dim)
+                torch.zeros(1, 1, shape_codes_dim),
+                torch.zeros(1, 1, shape_codes_dim)
             ]) 
 
     voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
@@ -338,7 +338,7 @@ def main(argv):
     scene.camera_position = args.camera_position
     scene.light = args.camera_position
 
-    autoencoder = Autoencoder({"z_dim": cfg.shape_codes_dim})
+    autoencoder = Autoencoder({"z_dim": shape_codes_dim})
     autoencoder.load_state_dict(torch.load(config["generator"]["shape_generator_model_path"]))
     autoencoder.freeze()
 

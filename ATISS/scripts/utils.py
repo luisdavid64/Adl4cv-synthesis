@@ -24,7 +24,7 @@ from simple_3dviz.utils import render as render_simple_3dviz
 from pathlib import Path
 from scene_synthesis.utils import get_textured_objects, get_textured_objects_from_voxels
 
-import cfg
+from cfg import shape_codes_dim
 
 
 class DirLock(object):
@@ -300,14 +300,14 @@ def render_to_folder(
         # Add start and end to shape codes
         if len(boxes["shape_codes"]):
             boxes["shape_codes"] =  torch.cat([
-                torch.zeros(1, 1, cfg.shape_codes_dim),
+                torch.zeros(1, 1, shape_codes_dim),
                 torch.cat(boxes["shape_codes"]),
-                torch.zeros(1, 1, cfg.shape_codes_dim)
+                torch.zeros(1, 1, shape_codes_dim)
             ]) 
         else:
             boxes["shape_codes"] =  torch.cat([
-                torch.zeros(1, 1, cfg.shape_codes_dim),
-                torch.zeros(1, 1, cfg.shape_codes_dim)
+                torch.zeros(1, 1, shape_codes_dim),
+                torch.zeros(1, 1, shape_codes_dim)
             ]) 
 
     voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))

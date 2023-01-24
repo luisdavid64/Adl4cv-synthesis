@@ -31,7 +31,8 @@ from scene_synthesis.utils import get_textured_objects, get_textured_objects_gt,
 import seaborn as sns
 import trimesh
 from scipy.spatial import cKDTree as KDTree
-import cfg
+
+from cfg import shape_codes_dim
 
 def voxels_to_points(voxels):
     indices = torch.nonzero(voxels)
@@ -186,7 +187,7 @@ def main(argv):
     )
     network.eval()
 
-    autoencoder = Autoencoder({"z_dim": cfg.shape_codes_dim})
+    autoencoder = Autoencoder({"z_dim": shape_codes_dim})
     autoencoder.load_state_dict(torch.load(config["generator"]["shape_generator_model_path"]))
     autoencoder.freeze()
 

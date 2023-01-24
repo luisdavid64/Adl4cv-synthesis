@@ -14,7 +14,8 @@ from fast_transformers.masking import LengthMask
 
 from .base import FixedPositionalEncoding
 from ..stats_logger import StatsLogger
-import cfg
+
+from cfg import shape_codes_dim
 
 
 class BaseAutoregressiveTransformer(nn.Module):
@@ -76,7 +77,7 @@ class BaseAutoregressiveTransformer(nn.Module):
             "translations": torch.zeros(1, 1, 3, device=device),
             "sizes": torch.zeros(1, 1, 3, device=device),
             "angles": torch.zeros(1, 1, 1, device=device),
-            "shape_codes" : torch.zeros((1,1,cfg.shape_codes_dim)).to(device)
+            "shape_codes" : torch.zeros((1,1,shape_codes_dim)).to(device)
         }
 
     def end_symbol(self, device="cpu"):
@@ -87,7 +88,7 @@ class BaseAutoregressiveTransformer(nn.Module):
             "translations": torch.zeros(1, 1, 3, device=device),
             "sizes": torch.zeros(1, 1, 3, device=device),
             "angles": torch.zeros(1, 1, 1, device=device),
-            "shape_codes": torch.zeros(1, 1, cfg.shape_codes_dim, device=device)
+            "shape_codes": torch.zeros(1, 1, shape_codes_dim, device=device)
         }
 
     def start_symbol_features(self, B, room_mask):
