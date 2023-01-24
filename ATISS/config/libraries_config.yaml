@@ -51,4 +51,4 @@ logger:
 
 generator:
     shape_generator_model_path: "../../autoencoder/network/output/pretrained_ae.pt"
-    generator_model_z_dim: 128
+    z_dim: 128

@@ -10,7 +10,7 @@ data:
     path_to_invalid_scene_ids: "../config/invalid_threed_front_rooms.txt"
     path_to_invalid_bbox_jids: "../config/black_list.txt"
     shape_codes_path: "../../output/threed_future_encoded_shapes.pkl"
-    
+
 network:
     type: "autoregressive_transformer"
     n_layers: 4
@@ -52,4 +52,4 @@ logger:
 
 generator:
     shape_generator_model_path: "../../autoencoder/network/output/pretrained_ae.pt"
-    generator_model_z_dim: 128
+    z_dim: 128
