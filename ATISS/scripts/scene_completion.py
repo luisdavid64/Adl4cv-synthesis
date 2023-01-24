@@ -32,6 +32,7 @@ from simple_3dviz import Scene
 sys.path.append('..')
 sys.path.append('../..')
 from autoencoder.network.autoencoder import Autoencoder
+import cfg
 
 
 def poll_objects(dataset, current_boxes, scene_id):
@@ -200,7 +201,7 @@ def main(argv):
     scene.camera_position = args.camera_position
     scene.light = args.camera_position
 
-    autoencoder = Autoencoder({"z_dim": 128})
+    autoencoder = Autoencoder({"z_dim": cfg.shape_codes_dim})
     autoencoder.load_state_dict(torch.load(config["generator"]["shape_generator_model_path"]))
     autoencoder.freeze()
 

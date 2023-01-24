@@ -13,6 +13,7 @@ from scipy.ndimage import rotate
 
 import torch
 from torch.utils.data import Dataset
+import cfg
 
 
 class DatasetDecoratorBase(Dataset):
@@ -209,7 +210,7 @@ class DatasetCollection(DatasetDecoratorBase):
         # Compute the max length of the sequences in the batch
         max_length = max(sample["length"] for sample in samples)
 
-        shape_codes_length = 128 
+        shape_codes_length = cfg.shape_codes_dim 
 
         # Assume that all inputs that are 3D or 1D do not need padding.
         # Otherwise, pad the first dimension.

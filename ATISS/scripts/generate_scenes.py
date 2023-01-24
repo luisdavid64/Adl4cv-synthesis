@@ -31,6 +31,8 @@ from scene_synthesis.utils import get_textured_objects, get_textured_objects_gt,
 import seaborn as sns
 import trimesh
 
+import cfg
+
 def main(argv):
     parser = argparse.ArgumentParser(
         description="Generate scenes using a previously trained model"
@@ -164,7 +166,7 @@ def main(argv):
     )
     network.eval()
 
-    autoencoder = Autoencoder({"z_dim": 128})
+    autoencoder = Autoencoder({"z_dim": cfg.shape_codes_dim})
     autoencoder.load_state_dict(torch.load(config["generator"]["shape_generator_model_path"]))
     autoencoder.freeze()
 
