@@ -73,7 +73,9 @@ def main(hparams):
             sums_np = np.array(sums)
             counts_np = np.array(counts)
             mean = sums_np/counts_np
-            print(list(zip(labels,counts,mean)))
+            print(list(zip(labels,
+                           map(int, counts),
+                           map(lambda x: round(x,2),mean))))
             # pickle.dump(shapes, open("../../output/threed_future_encoded_shapes.pkl", "wb"))
 
 if __name__ == "__main__":
