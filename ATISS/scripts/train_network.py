@@ -115,11 +115,6 @@ def main(argv):
         action="store_true",
         help="Use wandB for logging the training progress"
     )
-    parser.add_argument(
-        "--shape_codes_path",
-        default="../../output/threed_future_encoded_shapes.pkl",
-        help="Path to encodes shapes"
-    )
 
     args = parser.parse_args(argv)
 
@@ -171,7 +166,6 @@ def main(argv):
         path_to_bounds=None,
         augmentations=config["data"].get("augmentations", None),
         split=config["training"].get("splits", ["train", "val"]),
-        shape_codes_path=args.shape_codes_path
     )
     # Compute the bounds for this experiment, save them to a file in the
     # experiment directory and pass them to the validation dataset
@@ -193,7 +187,6 @@ def main(argv):
         path_to_bounds=path_to_bounds,
         augmentations=None,
         split=config["validation"].get("splits", ["test"]),
-        shape_codes_path=args.shape_codes_path
     )
 
     train_loader = DataLoader(

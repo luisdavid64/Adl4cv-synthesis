@@ -218,10 +218,10 @@ class CachedRoom(object):
 
 
 class CachedThreedFront(ThreedFront):
-    def __init__(self, base_dir, config, scene_ids, shape_codes_path):
+    def __init__(self, base_dir, config, scene_ids):
         self._base_dir = base_dir
         self.config = config
-        self.shape_codes_path = shape_codes_path
+        self.shape_codes_path = config["shape_codes_path"]
         with open(self.shape_codes_path, "rb") as f:
             self.shape_codes = pickle.load(f)
 
