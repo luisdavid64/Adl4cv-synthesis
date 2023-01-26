@@ -186,9 +186,8 @@ def get_textured_objects_from_voxels(bbox_params_t, voxel_shapes):
         trimesh_meshes.append(tr_mesh)
 
         raw_mesh = Mesh.from_voxel_grid(torch.round(voxels).bool().detach().numpy())
-        raw_mesh.scale(sizes.max()*2)
         # Apply the transformations in order to correctly position the mesh
-        raw_mesh.affine_transform(t=-tr_mesh.centroid)
+        raw_mesh.scale(sizes.max())
         raw_mesh.affine_transform(R=R, t=translation)
         renderables.append(raw_mesh)
 
