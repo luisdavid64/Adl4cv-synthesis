@@ -21,7 +21,7 @@ import numpy as np
 import torch
 
 from training_utils import load_config
-from utils import floor_plan_from_scene
+from utils import floor_plan_from_scene, scene_from_args
 
 from scene_synthesis.datasets import filter_function, \
     get_dataset_raw_and_encoded
@@ -32,6 +32,12 @@ import seaborn as sns
 import trimesh
 
 from cfg import shape_codes_dim
+from simple_3dviz.behaviours.io import SaveFrames 
+from simple_3dviz.behaviours.misc import LightToCamera
+from simple_3dviz.utils import render
+from simple_3dviz import Scene
+
+
 
 def main(argv):
     parser = argparse.ArgumentParser(
@@ -83,7 +89,8 @@ def main(argv):
     parser.add_argument(
         "--camera_position",
         type=lambda x: tuple(map(float, x.split(","))),
-        default="-0.10923499,1.9325259,-7.19009",
+        default="0,5, -7",
+
         help="Camer position in the scene"
     )
     parser.add_argument(
@@ -165,6 +172,12 @@ def main(argv):
         config, args.weight_file, device=device
     )
     network.eval()
+    # Create the scene and the behaviour list for simple-3dviz
+    scene = Scene(size=args.window_size)
+    scene.up_vector = args.up_vector
+    scene.camera_target = args.camera_target
+    scene.camera_position = args.camera_position
+    scene.light = args.camera_position
 
     autoencoder = Autoencoder({"z_dim": shape_codes_dim})
     autoencoder.load_state_dict(torch.load(config["generator"]["shape_generator_model_path"]))
@@ -218,12 +231,28 @@ def main(argv):
         renderables_gt, trimesh_meshes_gt = get_textured_objects_from_voxels_gt(
             bbox_params_gt, voxel_shapes_gt[None]
         )
-
-        # old method for comparison
-        # renderables_gt, trimesh_meshes_gt = get_textured_objects_gt(
-        #     bbox_params_gt, objects_dataset, classes
-        # )
-        
+        if args.without_screen:
+            # Do the rendering
+            path_to_image = "{}/{}_{}_256".format(
+                args.output_directory,
+                current_scene.scene_id,
+                scene_idx,
+            )
+            behaviours = [
+                LightToCamera(),
+                SaveFrames(path_to_image+".png", 1)
+            ]
+            render(
+                renderables + floor_plan,
+                behaviours=behaviours,
+                size=args.window_size,
+                camera_position=args.camera_position,
+                camera_target=args.camera_target,
+                up_vector=args.up_vector,
+                background=args.background,
+                n_frames=args.n_frames,
+                scene=scene
+            )
         if trimesh_meshes is not None:
             # Create a trimesh scene and export it
             path_to_objs = os.path.join(
