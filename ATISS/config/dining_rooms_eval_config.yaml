@@ -7,6 +7,7 @@ data:
     train_stats: "dataset_stats.txt"
     filter_fn: "no_filtering"
     room_layout_size: "64,64"
+    shape_codes_path: "../../output/threed_future_encoded_shapes.pkl"
 
 network:
     type: "autoregressive_transformer"
@@ -47,3 +48,5 @@ logger:
     type: "wandb"
     project: "autoregressive_transformer"
 
+generator:
+    shape_generator_model_path: "../../autoencoder/network/output/pretrained_ae.pt"

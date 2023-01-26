@@ -12,6 +12,7 @@ import torch.nn as nn
 from .bbox_output import AutoregressiveBBoxOutput
 from .base import FixedPositionalEncoding, sample_from_dmll
 
+from cfg import shape_codes_dim
 
 class Hidden2Output(nn.Module):
     def __init__(self, hidden_size, n_classes, with_extra_fc=False):
@@ -107,7 +108,7 @@ class AutoregressiveDMLL(Hidden2Output):
 
         c_hidden_size = hidden_size +  64 + 64*3 # class + sizes
         self.shape_layer = AutoregressiveDMLL._mlp(
-            c_hidden_size, 128
+            c_hidden_size, shape_codes_dim
         )
 
         self.bbox_output = bbox_output

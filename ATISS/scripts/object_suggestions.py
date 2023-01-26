@@ -38,6 +38,8 @@ sys.path.append('..')
 sys.path.append('../..')
 from autoencoder.network.autoencoder import Autoencoder
 
+from cfg import shape_codes_dim
+
 
 # Parametrization: x,y,z, w, l, h
 def poll_objects(dataset, current_boxes, scene_id):
@@ -96,14 +98,14 @@ def render_to_folder(
         # Add start and end to shape codes
         if len(boxes["shape_codes"]):
             boxes["shape_codes"] =  torch.cat([
-                torch.zeros(1, 1, 128),
+                torch.zeros(1, 1, shape_codes_dim),
                 torch.cat(boxes["shape_codes"]),
-                torch.zeros(1, 1, 128)
+                torch.zeros(1, 1, shape_codes_dim)
             ]) 
         else:
             boxes["shape_codes"] =  torch.cat([
-                torch.zeros(1, 1, 128),
-                torch.zeros(1, 1, 128)
+                torch.zeros(1, 1, shape_codes_dim),
+                torch.zeros(1, 1, shape_codes_dim)
             ]) 
 
     voxel_shapes_t = autoencoder.decoder(torch.squeeze(boxes["shape_codes"]))
@@ -278,16 +280,6 @@ def main(argv):
         default=100000,
         help="How many trials to do for rejection sampling"
     )
-    parser.add_argument(
-        "--shape_codes_path",
-        default="../../output/threed_future_encoded_shapes.pkl",
-        help="Path to encoded shapes"
-    )
-    parser.add_argument(
-        "--shape_generator_model_path",
-        default="../../autoencoder/network/output/pretrained_ae.pt",
-        help="Path to pretrained autoencoder"
-    )
 
     args = parser.parse_args(argv)
 
@@ -312,8 +304,7 @@ def main(argv):
             config["data"],
             split=config["training"].get("splits", ["train", "val"])
         ),
-        split=config["training"].get("splits", ["train", "val"]),
-        shape_codes_path=args.shape_codes_path
+        split=config["training"].get("splits", ["train", "val"])
     )
 
     # Build the dataset of 3D models
@@ -328,8 +319,7 @@ def main(argv):
             config["data"],
             split=config["validation"].get("splits", ["test"])
         ),
-        split=config["validation"].get("splits", ["test"]),
-        shape_codes_path=args.shape_codes_path
+        split=config["validation"].get("splits", ["test"])
     )
     print("Loaded {} scenes with {} object types:".format(
         len(dataset), dataset.n_object_types)
@@ -348,8 +338,8 @@ def main(argv):
     scene.camera_position = args.camera_position
     scene.light = args.camera_position
 
-    autoencoder = Autoencoder({"z_dim": 128})
-    autoencoder.load_state_dict(torch.load(args.shape_generator_model_path))
+    autoencoder = Autoencoder({"z_dim": shape_codes_dim})
+    autoencoder.load_state_dict(torch.load(config["generator"]["shape_generator_model_path"]))
     autoencoder.freeze()
 
     given_scene_id = None

@@ -20,7 +20,6 @@ def get_raw_dataset(
     filter_fn=lambda s: s,
     path_to_bounds=None,
     split=["train", "val"],
-    shape_codes_path=None
 ):
     dataset_type = config["dataset_type"]
     if "cached" in dataset_type:
@@ -33,7 +32,6 @@ def get_raw_dataset(
             config["dataset_directory"],
             config=config,
             scene_ids=split_scene_ids,
-            shape_codes_path=shape_codes_path
         )
     else:
         dataset = ThreedFront.from_dataset_directory(
@@ -53,9 +51,8 @@ def get_dataset_raw_and_encoded(
     path_to_bounds=None,
     augmentations=None,
     split=["train", "val"],
-    shape_codes_path=None
 ):
-    dataset = get_raw_dataset(config, filter_fn, path_to_bounds, split=split, shape_codes_path=shape_codes_path)
+    dataset = get_raw_dataset(config, filter_fn, path_to_bounds, split=split)
     encoding = dataset_encoding_factory(
         config.get("encoding_type"),
         dataset,
@@ -72,10 +69,9 @@ def get_encoded_dataset(
     path_to_bounds=None,
     augmentations=None,
     split=["train", "val"],
-    shape_codes_path=None
 ):
     _, encoding = get_dataset_raw_and_encoded(
-        config, filter_fn, path_to_bounds, augmentations, split, shape_codes_path
+        config, filter_fn, path_to_bounds, augmentations, split 
     )
     return encoding
 

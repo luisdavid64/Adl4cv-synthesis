@@ -32,6 +32,8 @@ import seaborn as sns
 import trimesh
 from scipy.spatial import cKDTree as KDTree
 
+from cfg import shape_codes_dim
+
 def voxels_to_points(voxels):
     indices = torch.nonzero(voxels)
     return indices
@@ -78,7 +80,7 @@ def main(argv):
     )
     parser.add_argument(
         "--weight_file",
-        default='../outputs/Y8V2L5S9M/model_05800',
+        default='../outputs/bedroom_200_epochs/model_00200',
         help="Path to a pretrained model"
     )
     parser.add_argument(
@@ -142,16 +144,6 @@ def main(argv):
         default=None,
         help="The scene id to be used for conditioning"
     )
-    parser.add_argument(
-        "--shape_codes_path",
-        default="../../output/threed_future_encoded_shapes.pkl",
-        help="Path to encodes shapes"
-    )
-    parser.add_argument(
-        "--shape_generator_model_path",
-        default="../../autoencoder/network/output/pretrained_ae.pt",
-        help="Path to encodes shapes"
-    )
 
 
     args = parser.parse_args(argv)
@@ -184,7 +176,6 @@ def main(argv):
             split=config["validation"].get("splits", ["test"])
         ),
         split=config["validation"].get("splits", ["test"]),
-        shape_codes_path=args.shape_codes_path
     )
     print("Loaded {} scenes with {} object types:".format(
         len(dataset), dataset.n_object_types)
@@ -196,15 +187,15 @@ def main(argv):
     )
     network.eval()
 
-    autoencoder = Autoencoder({"z_dim": 128})
-    autoencoder.load_state_dict(torch.load(args.shape_generator_model_path))
+    autoencoder = Autoencoder({"z_dim": shape_codes_dim})
+    autoencoder.load_state_dict(torch.load(config["generator"]["shape_generator_model_path"]))
     autoencoder.freeze()
 
     classes = np.array(dataset.class_labels)
     # for i in range(args.n_sequences):
     total_distance = 0
     object_count = 0
-    with open(args.shape_codes_path, "rb") as f:
+    with open(config["data"]["shape_codes_path"], "rb") as f:
         shape_codes_dict = pickle.load(f)
 
     shape_codes_tensor = torch.stack(list(shape_codes_dict.values())).squeeze()
