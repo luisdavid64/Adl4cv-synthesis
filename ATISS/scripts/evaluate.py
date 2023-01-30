@@ -69,10 +69,6 @@ def main(argv):
         help="Path to the output directory"
     )
     parser.add_argument(
-        "path_to_pickled_3d_futute_models",
-        help="Path to the 3D-FUTURE model meshes"
-    )
-    parser.add_argument(
         "--path_to_floor_plan_textures",
         type=str,
         default='../datasets/3D-Front/3D-FRONT-texture',
@@ -84,67 +80,17 @@ def main(argv):
         help="Path to a pretrained model"
     )
     parser.add_argument(
-        "--n_sequences",
-        default=1000,
+        "--scene_repetitions",
+        default=1,
         type=int,
-        help="The number of sequences to be generated"
+        help="The number of times each floor plan should be used during evaluation"
     )
     parser.add_argument(
-        "--background",
-        type=lambda x: list(map(float, x.split(","))),
-        default="1,1,1,1",
-        help="Set the background of the scene"
-    )
-    parser.add_argument(
-        "--up_vector",
-        type=lambda x: tuple(map(float, x.split(","))),
-        default="0,1,0",
-        help="Up vector of the scene"
-    )
-    parser.add_argument(
-        "--camera_position",
-        type=lambda x: tuple(map(float, x.split(","))),
-        default="-0.10923499,1.9325259,-7.19009",
-        help="Camer position in the scene"
-    )
-    parser.add_argument(
-        "--camera_target",
-        type=lambda x: tuple(map(float, x.split(","))),
-        default="0,0,0",
-        help="Set the target for the camera"
-    )
-    parser.add_argument(
-        "--window_size",
-        type=lambda x: tuple(map(int, x.split(","))),
-        default="512,512",
-        help="Define the size of the scene and the window"
-    )
-    parser.add_argument(
-        "--with_rotating_camera",
-        action="store_true",
-        help="Use a camera rotating around the object"
-    )
-    parser.add_argument(
-        "--save_frames",
-        help="Path to save the visualization frames to"
-    )
-    parser.add_argument(
-        "--n_frames",
+        "--repetitions",
+        default=10,
         type=int,
-        default=360,
-        help="Number of frames to be rendered"
+        help="The number of times the evaluation should be run"
     )
-    parser.add_argument(
-        "--without_screen",
-        action="store_true",
-        help="Perform no screen rendering"
-    )
-    parser.add_argument(
-        "--scene_id",
-        default=None,
-        help="The scene id to be used for conditioning"
-    )
-
 
     args = parser.parse_args(argv)
 
@@ -162,12 +108,6 @@ def main(argv):
         os.makedirs(args.output_directory)
 
     config = load_config(args.config_file)
-
-    # Build the dataset of 3D models
-    objects_dataset = ThreedFutureDataset.from_pickled_dataset(
-        args.path_to_pickled_3d_futute_models
-    )
-    print("Loaded {} 3D-FUTURE models".format(len(objects_dataset)))
 
     raw_dataset, dataset = get_dataset_raw_and_encoded(
         config["data"],
@@ -192,64 +132,56 @@ def main(argv):
     autoencoder.freeze()
 
     classes = np.array(dataset.class_labels)
-    # for i in range(args.n_sequences):
-    total_distance = 0
-    object_count = 0
     with open(config["data"]["shape_codes_path"], "rb") as f:
         shape_codes_dict = pickle.load(f)
 
     shape_codes_tensor = torch.stack(list(shape_codes_dict.values())).squeeze()
-    for i in tqdm(range(len(dataset))):
-        scene_idx = i
-        current_scene = raw_dataset[scene_idx]
-        floor_plan, tr_floor, room_mask = floor_plan_from_scene(
-            current_scene, args.path_to_floor_plan_textures
-        )
-        room_mask=room_mask.to(device)
-        bbox_params = network.generate_boxes(room_mask=room_mask, device=device)
-        boxes = dataset.post_process(bbox_params)
-        closest_shape_codes_id = torch.argmin(torch.cdist(torch.squeeze(boxes["shape_codes"]), shape_codes_tensor), dim=1)
-        closest_shape_codes = shape_codes_tensor[closest_shape_codes_id]
-        scene_distance = 0
-        for i in range(1, closest_shape_codes.shape[0]-1):#skip first and last (start and end symbol)
-            voxel_shapes_t = voxels_to_points(torch.round(autoencoder.decoder(torch.squeeze(boxes["shape_codes"])[i]).squeeze()))
-            voxel_shapes_gt = voxels_to_points(torch.round(autoencoder.decoder(closest_shape_codes[i]).squeeze()))
-            distance = eval_object(voxel_shapes_t, voxel_shapes_gt)
-            if distance == np.nan_to_num(distance):
-                object_count+=1
-                scene_distance+=distance
-        total_distance+=scene_distance
-            # print(distance)
-        # sys.exit()
-    print("mean_distance:", total_distance/object_count)
-    print("total_distance:", total_distance)
-
-
-
-
-def export_floor_plan(path, floor_plan):
-    ply_file = path + '/floor.ply'
-    trimesh_mesh = trimesh.Trimesh(vertices=floor_plan.vertices, faces=floor_plan.faces)
-    trimesh_mesh.export(ply_file)
-
-
-def export_scene(path_to_objs, trimesh_meshes, class_labels, classes, color_palette, floor_plan):
-    for (inst_idx, trimesh_mesh) in zip(range(1, class_labels.shape[0]-1), trimesh_meshes):
-        cls_label = class_labels[inst_idx].argmax()
-        color = color_palette[cls_label]
-        ply_file = path_to_objs + '/%d_%s.ply' % (inst_idx, classes[cls_label])
-        trimesh_mesh = trimesh.Trimesh(vertices=trimesh_mesh.vertices, faces=trimesh_mesh.faces, vertex_colors=color)
-        trimesh_mesh.export(ply_file)
-    export_floor_plan(path_to_objs, floor_plan)
-
-def export_scene_gt(path_to_objs, trimesh_meshes, class_labels, classes, color_palette, floor_plan):
-    for (inst_idx, trimesh_mesh) in zip(range(class_labels.shape[0]), trimesh_meshes):
-        cls_label = class_labels[inst_idx].argmax()
-        color = color_palette[cls_label]
-        ply_file = path_to_objs + '/%d_%s.ply' % (inst_idx, classes[cls_label])
-        trimesh_mesh = trimesh.Trimesh(vertices=trimesh_mesh.vertices, faces=trimesh_mesh.faces, vertex_colors=color)
-        trimesh_mesh.export(ply_file)
-    export_floor_plan(path_to_objs, floor_plan)
+    class_avg_total = None
+    reps = args.repetitions
+    scene_reps = args.scene_repetitions
+    for rep in tqdm(range(reps)):
+        class_counts = torch.zeros((len(classes))).to(device)
+        class_sums = torch.zeros((len(classes))).to(device)
+        for i in tqdm(range(len(dataset))):
+            for srep in range(scene_reps):
+                scene_idx = i
+                current_scene = raw_dataset[scene_idx]
+                floor_plan, tr_floor, room_mask = floor_plan_from_scene(
+                    current_scene, args.path_to_floor_plan_textures
+                )
+                room_mask=room_mask.to(device)
+                bbox_params = network.generate_boxes(room_mask=room_mask, device=device)
+                boxes = dataset.post_process(bbox_params)
+                class_ids = torch.nonzero(boxes["class_labels"].squeeze())[:,1].to(device)
+                closest_shape_codes_id = torch.argmin(torch.cdist(torch.squeeze(boxes["shape_codes"]), shape_codes_tensor), dim=1)
+                closest_shape_codes = shape_codes_tensor[closest_shape_codes_id]
+                for i in range(1, closest_shape_codes.shape[0]-1):#skip first and last (start and end symbol)
+                    voxel_shapes_t = voxels_to_points(torch.round(autoencoder.decoder(torch.squeeze(boxes["shape_codes"])[i]).squeeze()))
+                    voxel_shapes_gt = voxels_to_points(torch.round(autoencoder.decoder(closest_shape_codes[i]).squeeze()))
+                    distance = eval_object(voxel_shapes_t, voxel_shapes_gt)
+                    if distance == np.nan_to_num(distance):
+                        class_counts[class_ids[i]]+=1
+                        class_sums[class_ids[i]]+=distance
+                    # else: print("xxx")
+        class_counts[class_counts==0] = 1
+        class_avg = class_sums/class_counts
+        if class_avg_total == None:
+            class_avg_total = class_avg
+        else: class_avg_total += class_avg
+        str_out = ", ".join("(%s, %s)" % tup for tup in list(zip(classes, class_avg.tolist())))
+        # print()
+        with open(os.path.join(args.output_directory, "evaluation.txt"), "a+") as f:
+            f.write("Iteration: " + str(rep) + "\n")
+            f.write(str_out)
+            f.write("\n\n")
+    class_avg_total /= reps
+    str_out = ", ".join("(%s, %s)" % tup for tup in list(zip(classes, class_avg_total.tolist())))
+    with open(os.path.join(args.output_directory, "evaluation.txt"), "a+") as f:
+        f.write("Final Result:\n")
+        f.write(str_out)
+    # print("final:", "".join(list(zip(classes, class_avg_total.tolist()))))
+    return class_avg_total
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    with torch.no_grad():
+        main(sys.argv[1:])
