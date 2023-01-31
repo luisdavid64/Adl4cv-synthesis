@@ -2,6 +2,9 @@
 
 This is the project repository for the Advanced Deep Learning for Computer Vision project.
 
+This project aims at developing an end-to-end method for interior scene synthesis by using low-dimensional representations of scene furniture. To this end, we adopt the autoregressive architectures of previous works and enhance it with our own shape codes, representing our 3D objects in a low-dimensional space. Whereas in previous works, only class, 3D position, orientation and sizes are regressed, our proposal is to further regress a shape code per predicted object. These deep features will correspond to the latent space of an autoencoder pretrained on Voxel grids. By using the decoder part of this autoencoder using our shape codes, we obtain 3D voxel grids that we remesh using a regular marching cubes procedure. Therefore, the autoencoder has two important jobs for our task:
+- Provide ground truth labels for objects present in our furniture dataset (3D-FUTURE)
+- Provide a means to convert our regressed shape codes into full 3D models.
 
 ## Installation & Dependencies
 
@@ -74,4 +77,4 @@ python evaluate_autoencoder.py --data_root pickled_model_path --pretrained_model
 python evaluate.py config_file output_directory --path_to_pickled_3d_future_models pickled_model_path
 ```
 
-These calculate the chamfer distance of the reconstructions and the chamfer distance of the objects in the scene respectively.
+These calculate the Chamfer Distances of the autoencoder reconstructions and the Chamfer Distances of the objects in the 3D-FRONT scenes respectively.
