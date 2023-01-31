@@ -1,4 +1,4 @@
-## End2End Scene Synthesis
+## End-to-End Learning for Indoor Scene Synthesis using Low-Dimensional Representations 
 
 This is the project repository for the Advanced Deep Learning for Computer Vision project.
 
