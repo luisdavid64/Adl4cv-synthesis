@@ -36,14 +36,14 @@ class BaseAutoregressiveTransformer(nn.Module):
 
         self.register_parameter(
             "start_token_embedding",
-            nn.Parameter(torch.randn(1, 512))
+            nn.Parameter(torch.randn(1, 576))
         )
 
         # TODO: Add the projection dimensions for the room features in the
         # config!!!
         self.feature_extractor = feature_extractor
         self.fc_room_f = nn.Linear(
-            self.feature_extractor.feature_size, 512
+            self.feature_extractor.feature_size, 576
         )
 
         # Positional encoding for each property
@@ -64,9 +64,10 @@ class BaseAutoregressiveTransformer(nn.Module):
         self.input_dims = input_dims
         self.n_classes = self.input_dims - 3 - 3 - 1
         self.fc_class = nn.Linear(self.n_classes, 64, bias=False)
+        self.fc_shape_codes = nn.Linear(shape_codes_dim, 64, bias=False)
 
         hidden_dims = config.get("hidden_dims", 768)
-        self.fc = nn.Linear(512, hidden_dims)
+        self.fc = nn.Linear(576, hidden_dims)
         self.hidden2output = hidden2output
 
     def start_symbol(self, device="cpu"):
@@ -111,7 +112,7 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         super().__init__(input_dims, hidden2output, feature_extractor, config)
         # Embedding to be used for the empty/mask token
         self.register_parameter(
-            "empty_token_embedding", nn.Parameter(torch.randn(1, 512))
+            "empty_token_embedding", nn.Parameter(torch.randn(1, 576))
         )
 
     def forward(self, sample_params):
@@ -120,6 +121,7 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         translations = sample_params["translations"]
         sizes = sample_params["sizes"]
         angles = sample_params["angles"]
+        shape_codes = sample_params["shape_codes"]
         room_layout = sample_params["room_layout"]
         B, _, _ = class_labels.shape
 
@@ -139,7 +141,11 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         size_f = torch.cat([size_f_x, size_f_y, size_f_z], dim=-1)
 
         angle_f = self.pe_angle_z(angles)
-        X = torch.cat([class_f, pos_f, size_f, angle_f], dim=-1)
+
+        # Apply positional embeddings to shape codes
+        shape_codes_f = self.fc_shape_codes(shape_codes)
+
+        X = torch.cat([class_f, pos_f, size_f, angle_f, shape_codes_f], dim=-1)
 
         start_symbol_f = self.start_symbol_features(B, room_layout)
         # Concatenate with the mask embedding for the start token
@@ -161,6 +167,7 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
         translations = boxes["translations"]
         sizes = boxes["sizes"]
         angles = boxes["angles"]
+        shape_codes = boxes["shape_codes"]
         B, _, _ = class_labels.shape
 
         if class_labels.shape[1] == 1:
@@ -185,7 +192,11 @@ class AutoregressiveTransformer(BaseAutoregressiveTransformer):
             size_f = torch.cat([size_f_x, size_f_y, size_f_z], dim=-1)
 
             angle_f = self.pe_angle_z(angles[:, 1:])
-            X = torch.cat([class_f, pos_f, size_f, angle_f], dim=-1)
+
+            # Apply positional embeddings to shape codes
+            shape_codes_f = self.fc_shape_codes(shape_codes[:,1:])
+
+            X = torch.cat([class_f, pos_f, size_f, angle_f, shape_codes_f], dim=-1)
 
             start_symbol_f = self.start_symbol_features(B, room_mask)
             # Concatenate with the mask embedding for the start token
@@ -530,7 +541,7 @@ class AutoregressiveTransformerPE(AutoregressiveTransformer):
         super().__init__(input_dims, hidden2output, feature_extractor, config)
         # Embedding to be used for the empty/mask token
         self.register_parameter(
-            "empty_token_embedding", nn.Parameter(torch.randn(1, 512))
+            "empty_token_embedding", nn.Parameter(torch.randn(1, 576))
         )
 
         # Positional embedding for the ordering
@@ -565,6 +576,7 @@ class AutoregressiveTransformerPE(AutoregressiveTransformer):
         translations = sample_params["translations"]
         sizes = sample_params["sizes"]
         angles = sample_params["angles"]
+        shape_codes = sample_params["shape_codes"]
         room_layout = sample_params["room_layout"]
         B, L, _ = class_labels.shape
 
@@ -584,8 +596,12 @@ class AutoregressiveTransformerPE(AutoregressiveTransformer):
         size_f = torch.cat([size_f_x, size_f_y, size_f_z], dim=-1)
 
         angle_f = self.pe_angle_z(angles)
+
+        # Apply positional embeddings to shape codes
+        shape_codes_f = self.fc_shape_codes(shape_codes[:,1:])
+
         pe = self.positional_embedding[None, :L].expand(B, -1, -1)
-        X = torch.cat([class_f, pos_f, size_f, angle_f, pe], dim=-1)
+        X = torch.cat([class_f, pos_f, size_f, angle_f, shape_codes_f, pe], dim=-1)
 
         start_symbol_f = self.start_symbol_features(B, room_layout)
         # Concatenate with the mask embedding for the start token
@@ -607,6 +623,7 @@ class AutoregressiveTransformerPE(AutoregressiveTransformer):
         translations = boxes["translations"]
         sizes = boxes["sizes"]
         angles = boxes["angles"]
+        shape_codes = boxes["shape_codes"]
         B, L, _ = class_labels.shape
 
         if class_labels.shape[1] == 1:
@@ -631,8 +648,11 @@ class AutoregressiveTransformerPE(AutoregressiveTransformer):
             size_f = torch.cat([size_f_x, size_f_y, size_f_z], dim=-1)
 
             angle_f = self.pe_angle_z(angles[:, 1:])
+            # Apply positional embeddings to shape codes
+            shape_codes_f = self.fc_shape_codes(shape_codes[:,1:])
+
             pe = self.positional_embedding[None, 1:L].expand(B, -1, -1)
-            X = torch.cat([class_f, pos_f, size_f, angle_f, pe], dim=-1)
+            X = torch.cat([class_f, pos_f, size_f, angle_f, shape_codes_f, pe], dim=-1)
 
             start_symbol_f = self.start_symbol_features(B, room_mask)
             # Concatenate with the mask embedding for the start token
