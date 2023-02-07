@@ -19,7 +19,7 @@ The report for this project can be found [here](./assets/pdf/Report.pdf).
 
 The simplest way to make sure that you have all dependencies in place is to use
 [conda](https://docs.conda.io/projects/conda/en/4.6.1/index.html). You can
-create a conda environment called ```project``` using
+create a conda environment called ```adlproject``` using
 ```
 conda env create -f environment.yml
 conda activate adlproject
