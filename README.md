@@ -1,9 +1,9 @@
 ## End-to-End Learning for Indoor Scene Synthesis using Low-Dimensional Representations 
 
-<p>
-    <img width="240" alt="Example 1" src="assets/img/pred_scene_0.png"/>
-    <img width="240" alt="Example 2" src="assets/img/pred_scene_1.png"/>
-    <img width="240" alt="Example 3" src="assets/img/pred_scene_2.png"/>
+<p align="center">
+    <img width="240" height="220" alt="Example 1" src="assets/img/pred_scene_0.png"/>
+    <img width="240" height="220" alt="Example 2" src="assets/img/pred_scene_1.png"/>
+    <img width="240" height="220" alt="Example 3" src="assets/img/pred_scene_2.png"/>
 </p>
 
 
