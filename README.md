@@ -1,10 +1,19 @@
 ## End-to-End Learning for Indoor Scene Synthesis using Low-Dimensional Representations 
 
+<p>
+    <img width="240" alt="Example 1" src="assets/img/pred_scene_0.png"/>
+    <img width="240" alt="Example 2" src="assets/img/pred_scene_1.png"/>
+    <img width="240" alt="Example 3" src="assets/img/pred_scene_2.png"/>
+</p>
+
+
 This is the project repository for the Advanced Deep Learning for Computer Vision project.
 
-This project aims to develop an end-to-end method for interior scene synthesis by using low-dimensional representations of scene furniture. To this end, we adopt the autoregressive architectures of previous works and enhance them with our shape codes, representing our 3D objects in a low-dimensional space. Whereas past works regress only class, 3D position, orientation, and sizes, we propose to add a shape code to the regression. These deep features will correspond to the latent space of an autoencoder pre-trained on Voxel grids. Using the decoder part of this autoencoder using our shape codes, we obtain 3D voxel grids that we re-mesh using a regular marching cubes procedure. Therefore, the autoencoder has two meaningful jobs:
+This project aims to develop an end-to-end method for interior scene synthesis by using low-dimensional representations of scene furniture. To this end, we adopt the autoregressive architecture of previous works and enhance them with our shape codes, representing 3D objects in a low-dimensional space. Whereas past works regress only class, 3D position, orientation, and sizes, we regress a per-object shape code. These deep features will correspond to the latent space of an autoencoder pre-trained on Voxel grids. Using the decoder part of this autoencoder and our shape codes, we obtain 3D voxel grids that we re-mesh using a regular marching cubes procedure. Therefore, the autoencoder has two meaningful jobs:
 - Provide ground truth labels for objects present in our furniture dataset (3D-FUTURE)
-- Provide a means to convert our regressed shape codes into full 3D models.
+- Provide a mean to convert our regressed shape codes into full 3D models.
+
+The report for this project can be found [here](./assets/pdf/Report.pdf).
 
 ## Installation & Dependencies
 
